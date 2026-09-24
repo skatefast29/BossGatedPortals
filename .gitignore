@@ -5,6 +5,7 @@ obj/
 *.zip
 Environment.props
 release/
+__pycache__/
 
 # Private build notes (kept locally, not published)
 CLAUDE.md

@@ -1,0 +1,10 @@
+{
+  "name": "BossGatedPortals",
+  "version_number": "0.1.1",
+  "website_url": "https://github.com/skatefast29/BossGatedPortals",
+  "description": "Ores and metals can be teleported once you have defeated that biome's boss. Fully configurable.",
+  "dependencies": [
+    "denikson-BepInExPack_Valheim-5.4.2333",
+    "ValheimModding-Jotunn-2.30.2"
+  ]
+}

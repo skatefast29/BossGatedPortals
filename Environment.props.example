@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copy to Environment.props and set the paths for your PC. -->
+<Project>
+  <PropertyGroup>
+    <VALHEIM_INSTALL>C:\Program Files (x86)\Steam\steamapps\common\Valheim</VALHEIM_INSTALL>
+    <!-- BepInEx folder of the mod manager profile you test with. -->
+    <BEPINEX_PATH>$(APPDATA)\com.kesomannen.gale\valheim\profiles\YOUR PROFILE\BepInEx</BEPINEX_PATH>
+    <!-- Optional: the build copies the DLL here. Leave empty to skip. -->
+    <MOD_DEPLOYPATH>$(BEPINEX_PATH)\plugins</MOD_DEPLOYPATH>
+  </PropertyGroup>
+</Project>

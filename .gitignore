@@ -1,0 +1,14 @@
+bin/
+obj/
+.vs/
+*.user
+*.zip
+Environment.props
+release/
+
+# Private build notes (kept locally, not published)
+CLAUDE.md
+START_HERE.md
+BUILD_GUIDE.md
+BossGatedPortals.cfg
+.claude/

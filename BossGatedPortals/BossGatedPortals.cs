@@ -15,7 +15,7 @@ namespace BossGatedPortals
     {
         public const string PluginGUID = "com.jtmill01.bossgatedportals";
         public const string PluginName = "BossGatedPortals";
-        public const string PluginVersion = "0.1.1";
+        public const string PluginVersion = "0.1.2";
 
         public const string XPortalGUID = "yay.spikehimself.xportal";
 

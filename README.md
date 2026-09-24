@@ -3,6 +3,8 @@
 Ores and metals can be teleported once you have defeated that biome's boss. Fully configurable. Made to run with
 **[XPortal](https://thunderstore.io/c/valheim/p/SpikeHimself/XPortal/)**; also works with vanilla portals.
 
+Source: [github.com/skatefast29/BossGatedPortals](https://github.com/skatefast29/BossGatedPortals)
+
 ## Features
 
 - **One tier per boss**, each unlocking its biome's items. Item lists are configurable.
@@ -92,6 +94,10 @@ Checked against XPortal 1.2.25 only.
 
 - Checks run client-side; a modified client can bypass them.
 - After Valheim updates, check the log for `ValidateItemIds` and `LogUnmappedItems` warnings.
+
+## Source and bug reports
+
+Source code and bug reports are on [GitHub](https://github.com/skatefast29/BossGatedPortals). MIT licensed.
 
 ## Credits
 

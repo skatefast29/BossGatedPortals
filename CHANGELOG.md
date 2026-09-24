@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+- Source code on GitHub (linked from the mod page and README). No gameplay changes.
+
 ## 0.1.1
 
 - Iron Pit unlocks in Swamp, Dvergr Extractor in Mistlands; Petrified Tissue and Bloodgold listed in Deep North.

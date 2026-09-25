@@ -1,3 +1,4 @@
+using System;
 using BepInEx;
 using HarmonyLib;
 using Jotunn.Managers;
@@ -15,7 +16,7 @@ namespace BossGatedPortals
     {
         public const string PluginGUID = "com.jtmill01.bossgatedportals";
         public const string PluginName = "BossGatedPortals";
-        public const string PluginVersion = "0.1.2";
+        public const string PluginVersion = "0.1.3";
 
         public const string XPortalGUID = "yay.spikehimself.xportal";
 
@@ -36,7 +37,7 @@ namespace BossGatedPortals
             ItemManager.OnItemsRegistered += Settings.Validate;
             ItemManager.OnItemsRegistered += Hints.LogUnmappedItems;
 
-            harmony.PatchAll();
+            PatchEachHook();
             CommandManager.Instance.AddConsoleCommand(new StatusCommand());
 
             bool xportal = BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey(XPortalGUID);
@@ -47,6 +48,27 @@ namespace BossGatedPortals
         private void Start()
         {
             Compatibility.LogInstalledMods();
+        }
+
+        /// <summary>
+        /// Same as harmony.PatchAll(), one hook at a time. If a game update renames a method we hook,
+        /// only that hook is skipped (with an error in the log); PatchAll would stop at the first failure
+        /// and leave the rest of the mod half-loaded.
+        /// </summary>
+        private void PatchEachHook()
+        {
+            foreach (Type type in AccessTools.GetTypesFromAssembly(typeof(BossGatedPortals).Assembly))
+            {
+                try
+                {
+                    harmony.CreateClassProcessor(type).Patch();
+                }
+                catch (Exception e)
+                {
+                    Jotunn.Logger.LogError($"Couldn't hook the game for {type.Name} (game update?). " +
+                        $"That feature stays vanilla; the rest of the mod still works. {e}");
+                }
+            }
         }
 
         private static void ReportSettings()

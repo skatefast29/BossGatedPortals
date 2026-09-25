@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
@@ -94,7 +95,16 @@ namespace BossGatedPortals
                     !Settings.Enabled.Value || !Settings.ShowUnlockHint.Value)
                     return true;
 
-                string hint = BuildMessage();
+                string hint;
+                try
+                {
+                    hint = BuildMessage();
+                }
+                catch (Exception e)
+                {
+                    Failsafe.Report("Unlock hint", e);
+                    return true;
+                }
                 if (hint == null) return true; // nothing a tier can unlock: vanilla message
 
                 if (Time.time - lastHintTime < Settings.HintCooldownSeconds.Value)

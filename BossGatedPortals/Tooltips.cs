@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -17,13 +18,21 @@ namespace BossGatedPortals
         /// <summary>Should the tooltip line and slot icon mark this item as not teleportable?</summary>
         public static bool ShowNoTeleport(ItemDrop.ItemData item)
         {
-            bool vanilla = !item.m_shared.m_teleportable && !ZoneSystem.instance.GetGlobalKey(GlobalKeys.TeleportAll);
+            bool vanilla = !item.m_shared.m_teleportable && !Failsafe.TeleportAllSet();
 
             Player player = Player.m_localPlayer;
             if (!Settings.Enabled.Value || !Settings.AccurateTooltips.Value || player == null)
                 return vanilla;
 
-            return !Gate.CanTeleport(player, item);
+            try
+            {
+                return !Gate.CanTeleport(player, item);
+            }
+            catch (Exception e)
+            {
+                Failsafe.Report("Teleport tooltip/icon", e);
+                return vanilla;
+            }
         }
 
         /// <summary>

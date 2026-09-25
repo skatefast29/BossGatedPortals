@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.3
+
+- Fixed portals not working at all after the September 2026 Valheim update (the cart cargo check crashed).
+- Safer against future game updates: if a game change breaks one of the mod's hooks, that feature falls back
+  to vanilla with an error in the log, instead of breaking portals, tooltips or the inventory.
+- Requires BepInExPack Valheim 5.4.2351.
+
 ## 0.1.2
 
 - Source code on GitHub (linked from the mod page and README). No gameplay changes.

@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Reflection;
 using HarmonyLib;
 using Jotunn.Managers;
 
@@ -19,7 +21,7 @@ namespace BossGatedPortals
         {
             bool vanillaTeleportable = item.m_shared.m_teleportable;
             bool cheatTier = item.m_shared.m_toolTier >= 1000;
-            bool vanillaAllowAll = portalAllowsAll || ZoneSystem.instance.GetGlobalKey(GlobalKeys.TeleportAll);
+            bool vanillaAllowAll = portalAllowsAll || Failsafe.TeleportAllSet();
 
             // Mod switched off: exactly vanilla.
             if (!Settings.Enabled.Value)
@@ -128,20 +130,33 @@ namespace BossGatedPortals
     {
         private static bool Prefix(Inventory __instance, bool allowAllItems, ref bool __result)
         {
+            try
+            {
+                return Gatekeep(__instance, allowAllItems, ref __result);
+            }
+            catch (Exception e)
+            {
+                Failsafe.Report("Portal item check", e);
+                return true; // vanilla decides
+            }
+        }
+
+        private static bool Gatekeep(Inventory inventory, bool allowAllItems, ref bool result)
+        {
             Player player = Player.m_localPlayer;
             if (!Settings.Enabled.Value || player == null)
                 return true; // run vanilla
 
             Inventory cart = AttachedCartCargo(player);
-            bool own = player.GetInventory() == __instance;
-            if (!own && __instance != cart)
+            bool own = player.GetInventory() == inventory;
+            if (!own && inventory != cart)
                 return true; // someone else's inventory: vanilla
 
             Hints.LastBlocked.Clear();
-            AddBlocked(player, __instance, allowAllItems);
+            AddBlocked(player, inventory, allowAllItems);
             if (own && cart != null)
                 AddBlocked(player, cart, allowAllItems);
-            __result = Hints.LastBlocked.Count == 0;
+            result = Hints.LastBlocked.Count == 0;
             return false; // skip vanilla
         }
 
@@ -154,11 +169,15 @@ namespace BossGatedPortals
             }
         }
 
+        // Vagon.m_instances is private in the game: reading it directly throws FieldAccessException at runtime.
+        private static readonly FieldInfo VagonInstances = AccessTools.Field(typeof(Vagon), "m_instances");
+
         /// <summary>Cargo of the cart (Vagon) this player is pulling, or null (none, or GateAttachedCartCargo off).</summary>
         private static Inventory AttachedCartCargo(Player player)
         {
             if (!Settings.GateAttachedCartCargo.Value) return null;
-            foreach (Vagon vagon in Vagon.m_instances)
+            if (!(VagonInstances?.GetValue(null) is List<Vagon> carts)) return null;
+            foreach (Vagon vagon in carts)
             {
                 if (vagon && vagon.m_container && vagon.IsAttached(player))
                     return vagon.m_container.GetInventory();

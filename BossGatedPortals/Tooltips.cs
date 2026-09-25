@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 
 namespace BossGatedPortals
@@ -18,22 +19,38 @@ namespace BossGatedPortals
         /// <summary>Should the tooltip line and slot icon mark this item as not teleportable?</summary>
         public static bool ShowNoTeleport(ItemDrop.ItemData item)
         {
-            bool vanilla = !item.m_shared.m_teleportable && !Failsafe.TeleportAllSet();
-
-            Player player = Player.m_localPlayer;
-            if (!Settings.Enabled.Value || !Settings.AccurateTooltips.Value || player == null)
-                return vanilla;
-
+            // No game names in here (see Failsafe): if anything fails, show what vanilla would.
             try
             {
-                return !Gate.CanTeleport(player, item);
+                return Decide(item);
             }
             catch (Exception e)
             {
                 Failsafe.Report("Teleport tooltip/icon", e);
-                return vanilla;
+                try
+                {
+                    return Vanilla(item);
+                }
+                catch
+                {
+                    return false; // even vanilla's check failed: don't mark the item
+                }
             }
         }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static bool Decide(ItemDrop.ItemData item)
+        {
+            Player player = Player.m_localPlayer;
+            if (!Settings.Enabled.Value || !Settings.AccurateTooltips.Value || player == null)
+                return Vanilla(item);
+
+            return !Gate.CanTeleport(player, item);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static bool Vanilla(ItemDrop.ItemData item) =>
+            !item.m_shared.m_teleportable && !Failsafe.TeleportAllSet();
 
         /// <summary>
         /// In ItemData.GetTooltip, swap vanilla's condition

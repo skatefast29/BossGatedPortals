@@ -18,14 +18,14 @@ Source: [github.com/skatefast29/BossGatedPortals](https://github.com/skatefast29
 - **NeverTeleport list** for items that stay blocked forever.
 - **Cart cargo gated** when a cart-teleport mod is used.
 - **Admin tools:** `portalgate status` command and optional `AdminBypass`.
-- **Server-synced, admin-only settings**, editable live with F1. Strict version check.
+- **Server-synced, admin-only settings**, editable live with F1. Version check: server and clients need the same major.minor version (e.g. any 0.1.x).
 - **Startup checks** log item typos, duplicate items, unlisted blocked items and conflicting mods.
 
 ## Installation
 
 **Requires:** BepInExPack_Valheim, Jotunn.
 
-- Install on the server and every client (same version).
+- Install on the server and every client (same major.minor version, e.g. any 0.1.x; the newest is recommended).
 - **Gale / r2modman:** *Import → local mod*, pick the zip.
 - **Manual:** copy `BossGatedPortals.dll` to `BepInEx/plugins/BossGatedPortals/`.
 

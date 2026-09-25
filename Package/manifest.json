@@ -1,6 +1,6 @@
 {
   "name": "BossGatedPortals",
-  "version_number": "0.1.3",
+  "version_number": "0.1.4",
   "website_url": "https://github.com/skatefast29/BossGatedPortals",
   "description": "Ores and metals can be teleported once you have defeated that biome's boss. Fully configurable.",
   "dependencies": [

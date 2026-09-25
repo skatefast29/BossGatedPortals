@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using Jotunn.Managers;
 
@@ -124,40 +125,42 @@ namespace BossGatedPortals
     /// The blocking items are kept in Hints.LastBlocked so the "blocked" message can pick a hint.
     /// GateAttachedCartCargo: a cart the local player is pulling counts as carried, so its cargo is
     /// checked with the player's inventory, and also when a cart mod asks about the cart itself.
+    /// A postfix, not a prefix that skips vanilla (Harmony's advice for compatibility): vanilla answers
+    /// first, then we replace the answer. Postfixes always run, so the gate still has the last word if
+    /// another mod's prefix skips the original, and if we fail, vanilla's answer stands.
     /// </summary>
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.IsTeleportable))]
     internal static class InventoryIsTeleportablePatch
     {
-        private static bool Prefix(Inventory __instance, bool allowAllItems, ref bool __result)
+        private static void Postfix(Inventory __instance, bool allowAllItems, ref bool __result)
         {
             try
             {
-                return Gatekeep(__instance, allowAllItems, ref __result);
+                Gatekeep(__instance, allowAllItems, ref __result);
             }
             catch (Exception e)
             {
-                Failsafe.Report("Portal item check", e);
-                return true; // vanilla decides
+                Failsafe.Report("Portal item check", e); // __result keeps vanilla's answer
             }
         }
 
-        private static bool Gatekeep(Inventory inventory, bool allowAllItems, ref bool result)
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void Gatekeep(Inventory inventory, bool allowAllItems, ref bool result)
         {
             Player player = Player.m_localPlayer;
             if (!Settings.Enabled.Value || player == null)
-                return true; // run vanilla
+                return; // vanilla's answer stands
 
             Inventory cart = AttachedCartCargo(player);
             bool own = player.GetInventory() == inventory;
             if (!own && inventory != cart)
-                return true; // someone else's inventory: vanilla
+                return; // someone else's inventory: vanilla's answer stands
 
             Hints.LastBlocked.Clear();
             AddBlocked(player, inventory, allowAllItems);
             if (own && cart != null)
                 AddBlocked(player, cart, allowAllItems);
             result = Hints.LastBlocked.Count == 0;
-            return false; // skip vanilla
         }
 
         private static void AddBlocked(Player player, Inventory inventory, bool allowAllItems)

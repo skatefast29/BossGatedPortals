@@ -108,6 +108,24 @@ namespace BossGatedPortals
         {
             config = cfg;
 
+            // Write the config file once, not after every setting (Valheim modding wiki advice).
+            bool saveOnSet = cfg.SaveOnConfigSet;
+            cfg.SaveOnConfigSet = false;
+            try
+            {
+                BindEntries();
+            }
+            finally
+            {
+                cfg.Save();
+                cfg.SaveOnConfigSet = saveOnSet;
+            }
+
+            Parse();
+        }
+
+        private static void BindEntries()
+        {
             const string general = "0.1 - General";
             Enabled = Admin(general, "Enabled", true, "Master switch for the mod.");
             RequireWorldKey = Admin(general, "RequireWorldKey", true,
@@ -202,8 +220,6 @@ namespace BossGatedPortals
                         "Server-wide message when this tier's world key is first set. Never name a boss."),
                 });
             }
-
-            Parse();
         }
 
         /// <summary>Rebuilds Tiers and NeverTeleportItems from the current config values.</summary>
@@ -331,7 +347,11 @@ namespace BossGatedPortals
         private static string GetItemToken(string prefab)
         {
             if (string.IsNullOrEmpty(prefab)) return null;
-            return ObjectDB.instance.GetItemPrefab(prefab)?.GetComponent<ItemDrop>()?.m_itemData.m_shared.m_name;
+            // Unity's own null checks, not ?. (which misses destroyed Unity objects).
+            var prefabObject = ObjectDB.instance.GetItemPrefab(prefab);
+            if (!prefabObject) return null;
+            ItemDrop drop = prefabObject.GetComponent<ItemDrop>();
+            return drop ? drop.m_itemData.m_shared.m_name : null;
         }
 
         private static HashSet<string> SplitList(string value) =>

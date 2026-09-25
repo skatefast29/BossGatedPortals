@@ -12,8 +12,17 @@
     <Deterministic>true</Deterministic>
     <LangVersion>10</LangVersion>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <!-- Let Jotunn generate "publicized" copies of Valheim's DLLs (re-runs after game updates). -->
-    <ExecutePrebuild>true</ExecutePrebuild>
+    <!-- No "publicized" copies of Valheim's DLLs: we compile against the real ones (see below). -->
+    <ExecutePrebuild>false</ExecutePrebuild>
+    <!--
+      Runtime insurance: makes the game's Mono runtime skip private/public checks for this mod (the compiler
+      adds [SecurityPermission(RequestMinimum, SkipVerification = true)]). The build already refuses private
+      access (real game DLLs, below), so this only matters if a game update later makes private something we use as public:
+      the released DLL then keeps working instead of throwing FieldAccessException (the 0.1.2 bug).
+      Same effect as the IgnoreAccessModifiers.cs file in JotunnModStub; this is the csproj setting the
+      Valheim modding wiki and BepInEx.AssemblyPublicizer recommend. The mod has no actual unsafe code.
+    -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -30,6 +39,35 @@
   <ItemGroup>
     <PackageReference Include="JotunnLib" Version="2.30.2" />
   </ItemGroup>
+
+  <!--
+    JotunnLib references "publicized" game DLLs, where every private member is made public. Code built
+    against them compiles fine but throws FieldAccessException / MethodAccessException in the real game
+    (that broke every portal in 0.1.2). Swap them for the real DLLs so touching anything private is a
+    compile error. Reach private members through AccessTools instead.
+    Every *_publicized reference is swapped, including any a future JotunnLib adds, and the build
+    stops if one still gets through.
+    UnityEngine.ProfilerModule no longer ships with the game (Unity 6): drop it to silence the warning.
+  -->
+  <ItemGroup>
+    <Reference Remove="UnityEngine.ProfilerModule" Condition="!Exists('$(VALHEIM_MANAGED)/UnityEngine.ProfilerModule.dll')" />
+  </ItemGroup>
+
+  <Target Name="UseRealGameDlls" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <_Publicized Include="@(Reference)" Condition="$([System.String]::Copy('%(Identity)').EndsWith('_publicized'))" />
+      <Reference Remove="@(_Publicized)" />
+      <Reference Include="$([System.String]::Copy('%(_Publicized.Identity)').Replace('_publicized', ''))">
+        <HintPath>$(VALHEIM_MANAGED)/$([System.String]::Copy('%(_Publicized.Identity)').Replace('_publicized', '')).dll</HintPath>
+        <Private>false</Private>
+      </Reference>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="CheckNoPublicizedDlls" AfterTargets="ResolveAssemblyReferences">
+    <Error Condition="$([System.String]::Copy('%(ReferencePath.Filename)').Contains('publicized'))"
+           Text="Built against %(ReferencePath.Filename). The mod must compile against the real game DLLs (see the comment in this file), or private-member bugs slip through." />
+  </Target>
 
   <!-- Copy the built DLL into the Gale profile so the game loads it. -->
   <Target Name="DeployToGale" AfterTargets="Build" Condition=" '$(MOD_DEPLOYPATH)' != '' ">

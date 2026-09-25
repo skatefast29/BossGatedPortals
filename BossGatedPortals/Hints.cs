@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using UnityEngine;
 
@@ -91,20 +92,25 @@ namespace BossGatedPortals
         {
             private static bool Prefix(Player __instance, ref MessageHud.MessageType type, ref string msg)
             {
-                if (msg != "$msg_noteleport" || __instance != Player.m_localPlayer ||
-                    !Settings.Enabled.Value || !Settings.ShowUnlockHint.Value)
-                    return true;
-
-                string hint;
                 try
                 {
-                    hint = BuildMessage();
+                    return SwapForHint(__instance, ref type, ref msg);
                 }
                 catch (Exception e)
                 {
                     Failsafe.Report("Unlock hint", e);
-                    return true;
+                    return true; // vanilla message
                 }
+            }
+
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            private static bool SwapForHint(Player player, ref MessageHud.MessageType type, ref string msg)
+            {
+                if (msg != "$msg_noteleport" || player != Player.m_localPlayer ||
+                    !Settings.Enabled.Value || !Settings.ShowUnlockHint.Value)
+                    return true;
+
+                string hint = BuildMessage();
                 if (hint == null) return true; // nothing a tier can unlock: vanilla message
 
                 if (Time.time - lastHintTime < Settings.HintCooldownSeconds.Value)

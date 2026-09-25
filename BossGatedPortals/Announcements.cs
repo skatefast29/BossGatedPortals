@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 
 namespace BossGatedPortals
@@ -15,8 +16,19 @@ namespace BossGatedPortals
         // __state = the key was already set before this call (then nothing is announced).
         private static void Prefix(ZoneSystem __instance, string name, out bool __state)
         {
-            __state = __instance.GetGlobalKey(name);
+            try
+            {
+                __state = WasSet(__instance, name);
+            }
+            catch (Exception e)
+            {
+                Failsafe.Report("Tier unlock announcement", e);
+                __state = true; // treat as already set: announce nothing
+            }
         }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static bool WasSet(ZoneSystem zoneSystem, string name) => zoneSystem.GetGlobalKey(name);
 
         private static void Postfix(ZoneSystem __instance, string name, bool __state)
         {
@@ -30,6 +42,7 @@ namespace BossGatedPortals
             }
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static void Announce(ZoneSystem zoneSystem, string name, bool wasSet)
         {
             if (wasSet || !Settings.Enabled.Value || !Settings.AnnounceTierUnlock.Value) return;

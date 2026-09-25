@@ -10,13 +10,15 @@ namespace BossGatedPortals
     [BepInDependency(Jotunn.Main.ModGuid)]
     // Load after XPortal when it's installed, but work without it.
     [BepInDependency(XPortalGUID, BepInDependency.DependencyFlags.SoftDependency)]
-    // Every client must run exactly the server's version of this mod.
-    [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.Patch)]
+    // Every client must have the mod, with the server's major.minor version; patch versions may differ
+    // (Jotunn's recommendation). Bump the minor version for anything that changes how client and server
+    // must agree (config meaning, synced settings, gate rules); keep bug fixes to patch versions.
+    [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.Minor)]
     internal class BossGatedPortals : BaseUnityPlugin
     {
         public const string PluginGUID = "com.jtmill01.bossgatedportals";
         public const string PluginName = "BossGatedPortals";
-        public const string PluginVersion = "0.1.3";
+        public const string PluginVersion = "0.1.4";
 
         public const string XPortalGUID = "yay.spikehimself.xportal";
 
@@ -79,9 +81,6 @@ namespace BossGatedPortals
             Hints.LogUnmappedItems();
         }
 
-        private void OnDestroy()
-        {
-            harmony.UnpatchSelf();
-        }
+        // No OnDestroy/UnpatchSelf: the Valheim modding wiki advises against unpatching on shutdown.
     }
 }

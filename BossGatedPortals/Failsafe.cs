@@ -6,6 +6,10 @@ namespace BossGatedPortals
     /// <summary>
     /// Keeps a game update from turning a mod error into a broken game feature. Every hook catches its
     /// own errors, reports them here once, and falls back to vanilla behaviour for that call.
+    ///
+    /// Pattern for every Harmony hook: the Prefix/Postfix itself holds only try/catch and one call to a
+    /// [MethodImpl(NoInlining)] method with the real work. A game member that was renamed or removed
+    /// fails when the method mentioning it is first run, so that mention must sit inside the try.
     /// </summary>
     internal static class Failsafe
     {

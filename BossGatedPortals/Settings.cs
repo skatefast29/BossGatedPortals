@@ -42,6 +42,7 @@ namespace BossGatedPortals
         // [0.5 - Compatibility] and [0.6 - XPortal Compatibility]
         public static ConfigEntry<bool> RespectVanillaAllowAll;
         public static ConfigEntry<bool> GateAttachedCartCargo;
+        public static ConfigEntry<bool> GateTameCargo;
         public static ConfigEntry<bool> WarnOnConflictingMods;
         public static ConfigEntry<bool> LogPortalModDetection;
 
@@ -190,6 +191,9 @@ namespace BossGatedPortals
                 "and respect the 'Portals' world modifier when it allows all items.");
             GateAttachedCartCargo = Admin(compat, "GateAttachedCartCargo", true,
                 "If a cart-teleport mod carries an attached cart through, gate its cargo with the same check.");
+            GateTameCargo = Admin(compat, "GateTameCargo", true,
+                "If a mod teleports your tames with you (TeleportEverything, or Waypoints with 'Teleport Tames' on), " +
+                "gate the items in their saddlebags (LoxSaddleBags, OdinHorse, or any container on a tame) with the same check.");
             WarnOnConflictingMods = Admin(compat, "WarnOnConflictingMods", true,
                 "Log a warning at startup if another mod that changes item teleport rules is installed (or set to " +
                 "let every item through), and once per item if a tier-listed item is teleportable anyway.");

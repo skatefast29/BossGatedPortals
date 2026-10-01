@@ -117,13 +117,12 @@ namespace BossGatedPortals
         {
             if (!Chainloader.PluginInfos.TryGetValue(conflict.GUID, out PluginInfo p) || p.Instance == null) return;
 
-            ConfigFile config = p.Instance.Config;
             bool found = true, on = true;
             foreach (var (section, key, value) in conflict.When)
             {
-                var definition = new ConfigDefinition(section, key);
-                if (!config.ContainsKey(definition)) { found = false; break; }
-                on &= string.Equals(config[definition].BoxedValue?.ToString(), value, StringComparison.OrdinalIgnoreCase);
+                ConfigEntryBase entry = FindSetting(conflict.GUID, section, key);
+                if (entry == null) { found = false; break; }
+                on &= IsSet(entry, value);
             }
 
             if (!found)
@@ -145,6 +144,19 @@ namespace BossGatedPortals
                 "teleportable anyway (vanilla, or another mod changed it), so it passes portals before that tier " +
                 "unlocks. To gate it, set GateListedVanillaItems = true.");
         }
+
+        /// <summary>Another mod's setting, or null if that mod (or the setting) isn't loaded.</summary>
+        public static ConfigEntryBase FindSetting(string guid, string section, string key)
+        {
+            if (!Chainloader.PluginInfos.TryGetValue(guid, out PluginInfo p) || p.Instance == null) return null;
+            ConfigFile config = p.Instance.Config;
+            var definition = new ConfigDefinition(section, key);
+            return config.ContainsKey(definition) ? config[definition] : null;
+        }
+
+        /// <summary>Whether a setting has this value, compared as text ("On", "True", "Always", ...).</summary>
+        public static bool IsSet(ConfigEntryBase entry, string value) =>
+            string.Equals(entry?.BoxedValue?.ToString(), value, StringComparison.OrdinalIgnoreCase);
 
         private static bool Matches(PluginInfo p, string fragment) =>
             Normalize(p.Metadata.GUID).Contains(fragment) || Normalize(p.Metadata.Name).Contains(fragment);

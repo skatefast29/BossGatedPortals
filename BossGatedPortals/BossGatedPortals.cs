@@ -10,6 +10,8 @@ namespace BossGatedPortals
     [BepInDependency(Jotunn.Main.ModGuid)]
     // Load after XPortal when it's installed, but work without it.
     [BepInDependency(XPortalGUID, BepInDependency.DependencyFlags.SoftDependency)]
+    // Load after Waypoints when it's installed, so its item check can be found (see Tames.cs).
+    [BepInDependency(Tames.WaypointsGUID, BepInDependency.DependencyFlags.SoftDependency)]
     // Every client must have the mod, with the server's major.minor version; patch versions may differ
     // (Jotunn's recommendation). Bump the minor version for anything that changes how client and server
     // must agree (config meaning, synced settings, gate rules); keep bug fixes to patch versions.
@@ -18,7 +20,7 @@ namespace BossGatedPortals
     {
         public const string PluginGUID = "com.jtmill01.bossgatedportals";
         public const string PluginName = "BossGatedPortals";
-        public const string PluginVersion = "0.2.0";
+        public const string PluginVersion = "0.2.1";
 
         public const string XPortalGUID = "yay.spikehimself.xportal";
 

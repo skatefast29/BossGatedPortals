@@ -1,0 +1,198 @@
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using BepInEx.Bootstrap;
+using BepInEx.Configuration;
+using HarmonyLib;
+using UnityEngine;
+
+namespace BossGatedPortals
+{
+    /// <summary>
+    /// Saddlebags on tames that teleport with the player (GateTameCargo). In vanilla tames never teleport.
+    /// Two mods bring them along, and their bags are gated with the player's own inventory:
+    /// - TeleportEverything (zenox.teleporteverything) takes nearby tames on every player teleport, chosen
+    ///   by its own GetTransportableAllies; we call that same method, so the tames always match.
+    /// - Waypoints (RustyMods.Waypoints) with "Teleport Tames" on takes every following tame, but only on
+    ///   its own waypoint teleports: those bags are added only while its item check runs.
+    /// Bags found on a tame:
+    /// - any Container on the tame or its children (LoxSaddleBags puts one on the lox);
+    /// - OdinHorse's saddlebags, saved in the horse's ZDO. Its "SaddlebagContainer" child only shows them
+    ///   while open and is skipped; the saved data is the truth.
+    /// Other mods are read through reflection: no build reference, and nothing runs without them.
+    /// </summary>
+    internal static class Tames
+    {
+        public const string TeleportEverythingGUID = "zenox.teleporteverything";
+        public const string WaypointsGUID = "RustyMods.Waypoints";
+        private const string OdinHorseContainerName = "SaddlebagContainer";
+        private static readonly int OdinHorseBagsKey = "rae_saddlebags".GetStableHashCode();
+
+        // > 0 while Waypoints' item check runs (see WaypointsCanTeleportPatch).
+        internal static int waypointsCheckDepth;
+
+        // TeleportEverything
+        private static bool teResolved;
+        private static ConfigEntryBase teEnabled;                       // [General] Enabled
+        private static Func<Vector3, GameObject, bool, List<Character>> teAllies; // GetTransportableAllies
+        private static FieldInfo tePortalPosition;                      // Vector3? set during a portal teleport
+
+        // Waypoints
+        private static bool waypointsResolved;
+        private static ConfigEntryBase waypointsTeleportTames;          // [2 - Settings] 5 - Teleport Tames
+
+        private static readonly List<Inventory> cargo = new List<Inventory>();
+        private static readonly HashSet<Character> seen = new HashSet<Character>();
+        // OdinHorse bags parsed from their saved text, per horse; parsed again only when the text changes.
+        private static readonly Dictionary<ZDOID, KeyValuePair<string, Inventory>> savedBags =
+            new Dictionary<ZDOID, KeyValuePair<string, Inventory>>();
+
+        /// <summary>
+        /// Bags on the tames that will teleport with the player; empty if none.
+        /// A failure here only skips the tames: the player's own inventory is still gated.
+        /// </summary>
+        public static List<Inventory> Cargo(Player player)
+        {
+            cargo.Clear();
+            seen.Clear();
+            if (!Settings.GateTameCargo.Value) return cargo;
+            try
+            {
+                if (TeleportEverythingTakesTames())
+                {
+                    // Same position TeleportEverything uses: the portal during a portal teleport, else the player.
+                    Vector3 from = tePortalPosition.GetValue(null) as Vector3? ?? player.transform.position;
+                    foreach (Character tame in teAllies(from, player.gameObject, false))
+                        AddBags(tame);
+                }
+
+                if (waypointsCheckDepth > 0 && WaypointsTakesTames())
+                {
+                    // Same tames Waypoints takes: tameable and following this player, at any distance.
+                    foreach (Character character in Character.GetAllCharacters())
+                    {
+                        MonsterAI ai = character.GetComponent<MonsterAI>();
+                        if (character.GetComponent<Tameable>() && ai && ai.GetFollowTarget() == player.gameObject)
+                            AddBags(character);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Failsafe.Report("Tame saddlebag check", e);
+                cargo.Clear();
+            }
+            return cargo;
+        }
+
+        private static void AddBags(Character tame)
+        {
+            if (!tame || !seen.Add(tame)) return;
+
+            foreach (Container container in tame.GetComponentsInChildren<Container>(true))
+            {
+                Inventory inventory = container.GetInventory();
+                if (inventory != null && container.gameObject.name != OdinHorseContainerName)
+                    cargo.Add(inventory);
+            }
+
+            ZNetView nview = tame.GetComponent<ZNetView>();
+            if (nview && nview.IsValid())
+            {
+                Inventory saved = SavedBags(nview.GetZDO());
+                if (saved != null) cargo.Add(saved);
+            }
+        }
+
+        private static Inventory SavedBags(ZDO zdo)
+        {
+            string text = zdo.GetString(OdinHorseBagsKey, "");
+            if (string.IsNullOrEmpty(text)) return null;
+            if (savedBags.TryGetValue(zdo.m_uid, out var cached) && cached.Key == text) return cached.Value;
+
+            // Big enough for any bag size OdinHorse allows, so no saved item is left out.
+            var inventory = new Inventory("Saddlebags", null, 32, 32);
+            inventory.Load(new ZPackage(text));
+            savedBags[zdo.m_uid] = new KeyValuePair<string, Inventory>(text, inventory);
+            return inventory;
+        }
+
+        private static bool TeleportEverythingTakesTames()
+        {
+            if (!teResolved)
+            {
+                teResolved = true;
+                Type type = PluginType(TeleportEverythingGUID, "TeleportEverything.TeleportEverythingPlugin", out bool installed);
+                if (installed)
+                {
+                    MethodInfo allies = type == null ? null : AccessTools.Method(type, "GetTransportableAllies",
+                        new[] { typeof(Vector3), typeof(GameObject), typeof(bool) });
+                    tePortalPosition = type == null ? null : AccessTools.Field(type, "activePortalPosition");
+                    teEnabled = Compatibility.FindSetting(TeleportEverythingGUID, "General", "Enabled");
+
+                    if (allies != null && allies.ReturnType == typeof(List<Character>) &&
+                        tePortalPosition?.FieldType == typeof(Vector3?) && teEnabled != null)
+                        teAllies = AccessTools.MethodDelegate<Func<Vector3, GameObject, bool, List<Character>>>(allies);
+                    else
+                        Jotunn.Logger.LogWarning("GateTameCargo: TeleportEverything's tame code changed " +
+                            "(TeleportEverything update?). Saddlebags on tames it teleports aren't gated.");
+                }
+            }
+            return teAllies != null && Compatibility.IsSet(teEnabled, "True");
+        }
+
+        private static bool WaypointsTakesTames()
+        {
+            if (!waypointsResolved)
+            {
+                waypointsResolved = true;
+                waypointsTeleportTames = Compatibility.FindSetting(WaypointsGUID, "2 - Settings", "5 - Teleport Tames");
+                if (waypointsTeleportTames == null)
+                    Jotunn.Logger.LogWarning("GateTameCargo: Waypoints' 'Teleport Tames' setting wasn't found " +
+                        "(Waypoints update?). Saddlebags on tames it teleports aren't gated.");
+            }
+            return Compatibility.IsSet(waypointsTeleportTames, "On");
+        }
+
+        /// <summary>
+        /// A type from another mod's assembly, looked up without logging when the mod isn't there.
+        /// installed = the mod has loaded (the type may still be missing after an update).
+        /// </summary>
+        internal static Type PluginType(string guid, string typeName, out bool installed)
+        {
+            installed = Chainloader.PluginInfos.TryGetValue(guid, out var plugin) && plugin.Instance != null;
+            return installed ? plugin.Instance.GetType().Assembly.GetType(typeName) : null;
+        }
+    }
+
+    /// <summary>
+    /// Marks Waypoints' item check (Waypoint.CanTeleport, private) so the gate adds following tames'
+    /// saddlebags. Skipped when Waypoints isn't installed. BossGatedPortals loads after Waypoints (soft
+    /// dependency) so its type is found here. Nothing in here can fail, so no try/catch.
+    /// </summary>
+    [HarmonyPatch]
+    internal static class WaypointsCanTeleportPatch
+    {
+        private static bool resolved;
+        private static MethodBase target;
+
+        // Harmony may call Prepare more than once: look up (and warn) only the first time.
+        private static bool Prepare()
+        {
+            if (resolved) return target != null;
+            resolved = true;
+            Type waypoint = Tames.PluginType(Tames.WaypointsGUID, "Waypoints.Behaviors.Waypoint", out bool installed);
+            target = waypoint == null ? null : AccessTools.Method(waypoint, "CanTeleport", new[] { typeof(Player), typeof(bool) });
+            if (installed && target == null)
+                Jotunn.Logger.LogWarning("GateTameCargo: Waypoints' item check wasn't found (Waypoints update?). " +
+                    "Saddlebags on tames it teleports aren't gated.");
+            return target != null;
+        }
+
+        private static MethodBase TargetMethod() => target;
+
+        private static void Prefix() => Tames.waypointsCheckDepth++;
+
+        private static void Finalizer() => Tames.waypointsCheckDepth--;
+    }
+}

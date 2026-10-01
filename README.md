@@ -83,6 +83,7 @@ All admin-only and server-synced, except those marked *client*.
 | Admin | `EnableStatusCommand` | `true` | Enable `portalgate status` |
 | Compatibility | `RespectVanillaAllowAll` | `true` | Don't block Stone Portals or the allow-all *Portals* world modifier |
 | Compatibility | `GateAttachedCartCargo` | `true` | Gate cart cargo |
+| Compatibility | `GateTameCargo` | `true` | Gate saddlebags on tames that teleport with you |
 | Compatibility | `WarnOnConflictingMods` | `true` | Warn about conflicting mods |
 | XPortal Compatibility | `LogPortalModDetection` | `true` | Log XPortal/XPortalNetworks versions, warn on AnyPortal |
 
@@ -97,6 +98,12 @@ Tested in game with XPortal 1.2.25. The mods below were checked by reading their
 - **Bags:** items in AdventureBackpacks, Smoothbrain's Backpacks and RustyBags bags are gated like items in
   your inventory, and unlock with their tiers. Jewelcrafting's bags only hold gems and jewelry.
   ExtraSlots and AzuExtendedPlayerInventory slots are part of your inventory.
+- **Tames:** when TeleportEverything (or Waypoints with "Teleport Tames" on) brings tames along, items in
+  their saddlebags are gated too: LoxSaddleBags, OdinHorse, or any container on a tame. For
+  TeleportEverything, set its `TransportRestrictedItems` to false, or it lets everything through.
+- **Carts and ships:** a cart a mod pulls through a portal with you is gated (`GateAttachedCartCargo`).
+  BottleShips bottles arrive empty, since the game drops a cart's or ship's cargo when it's taken apart.
+  ValheimRAFT's portals on ships only move the player.
 - **Mods that change items:** if another mod makes a tier-listed item teleportable (for example the item
   file of Creature Level & Loot Control), the log says so once. Set `GateListedVanillaItems = true` to gate
   it anyway.
@@ -108,7 +115,7 @@ Tested in game with XPortal 1.2.25. The mods below were checked by reading their
 - **Proper Portals:** its faster loading screens work; its "carry anything" doesn't, because this mod's
   check still runs.
 - **Not gated:** ways to move items that don't use portals (shipping mods, cross-server portals, admin
-  commands), and tames teleported with saddlebags full of ore.
+  commands).
 
 ## Known limits
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+- New `GateTameCargo` setting (on by default): when TeleportEverything, or Waypoints with "Teleport Tames"
+  on, brings tames through with you, items in their saddlebags follow the tiers too (LoxSaddleBags,
+  OdinHorse, or any container on a tame). Normal portals without those mods are unaffected.
+
 ## 0.2.0
 
 - Server owners: update the server and every player. Players need 0.2.x to join a 0.2.0 server, so

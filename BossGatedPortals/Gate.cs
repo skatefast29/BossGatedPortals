@@ -242,6 +242,11 @@ namespace BossGatedPortals
             AddBlocked(player, inventory, allowAllItems);
             if (own && cart != null)
                 AddBlocked(player, cart, allowAllItems);
+            if (own)
+            {
+                foreach (Inventory bags in Tames.Cargo(player))
+                    AddBlocked(player, bags, allowAllItems);
+            }
             result = Hints.LastBlocked.Count == 0;
         }
 

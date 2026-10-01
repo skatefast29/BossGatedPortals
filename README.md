@@ -5,10 +5,9 @@ beaten. Each boss unlocks its own biome's goods, so portals open up as your worl
 never letting metal through.
 
 That's all it does out of the box. The **optional extras** further down (companions that travel with
-you, faster portals) are **off by default**, and work in single player and on servers alike.
+you, faster portals) are **off by default**.
 
-Made to run with **[XPortal](https://thunderstore.io/c/valheim/p/SpikeHimself/XPortal/)** (which chooses
-where portals go); also works with vanilla portals. All settings are server-synced and editable live with F1.
+All settings are server-synced and editable live with F1.
 
 Source: [github.com/skatefast29/BossGatedPortals](https://github.com/skatefast29/BossGatedPortals)
 
@@ -88,8 +87,7 @@ Per-tier settings:
 
 ## Settings
 
-All admin-only and server-synced, except **8 - Client**, which each player sets for themselves. In single
-player you're the admin, so you can change everything.
+All admin-only and server-synced, except **8 - Client**, which each player sets for themselves.
 
 | Section | Setting | Default | Description |
 |---|---|---|---|

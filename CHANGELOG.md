@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.0
+
+- Server owners: update the server and every player. Players need 0.2.x to join a 0.2.0 server, so
+  nobody can keep using the backpack exploit below on an older version.
+- Fixed: ore in an AdventureBackpacks bag could go through portals before its boss was defeated.
+  Bag contents now follow the tiers, and the hint names the right boss area.
+- Smoothbrain's Backpacks and RustyBags: items in their bags now unlock with their tiers. Before, they
+  stayed blocked until the final tier.
+- The ServersideQoL warning now only appears for its PortalProgression add-on, not for every ServersideQoL part.
+- New startup warnings when another mod is set to let every item through: TeleportEverything (on by
+  default), AzuMiscPatches, ValheimPlus, TargetPortal, Unified Target Portal, Portal Stations, Waypoints,
+  Waystones, ReturnScroll, PortalRules (paid fares) and TeleportationMeads.
+- New log warning if a tier-listed item is teleportable anyway because another mod changed it.
+
 ## 0.1.4
 
 - Server owners: update the server first. From this version, players only need the same major.minor

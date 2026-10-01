@@ -88,7 +88,27 @@ All admin-only and server-synced, except those marked *client*.
 
 ## Compatibility
 
-Checked against XPortal 1.2.25 only.
+Tested in game with XPortal 1.2.25. The mods below were checked by reading their code:
+
+- **Portal mods:** TargetPortal, Unified Target Portal, XPortalNetworks, PortalRules, PotalMap, Better
+  Portal, Portal Stations, Waypoints and Waystones all ask the game's own item check, so the tiers and
+  unlock hints apply to them too. Their own "ignore item restrictions" settings are warned about at startup
+  when they're on. QuickTeleport and FastTeleport only change loading times.
+- **Bags:** items in AdventureBackpacks, Smoothbrain's Backpacks and RustyBags bags are gated like items in
+  your inventory, and unlock with their tiers. Jewelcrafting's bags only hold gems and jewelry.
+  ExtraSlots and AzuExtendedPlayerInventory slots are part of your inventory.
+- **Mods that change items:** if another mod makes a tier-listed item teleportable (for example the item
+  file of Creature Level & Loot Control), the log says so once. Set `GateListedVanillaItems = true` to gate
+  it anyway.
+- **Warned at startup:** mods with their own item gate (ServersideQoL's PortalProgression add-on,
+  AdvancedPortals), and settings that let every item through: TeleportEverything's
+  `TransportRestrictedItems` (on by default), AzuMiscPatches, ValheimPlus, TargetPortal, Unified Target
+  Portal, Portal Stations, Waypoints, Waystones, ReturnScroll, PortalRules' paid fares, and
+  TeleportationMeads.
+- **Proper Portals:** its faster loading screens work; its "carry anything" doesn't, because this mod's
+  check still runs.
+- **Not gated:** ways to move items that don't use portals (shipping mods, cross-server portals, admin
+  commands), and tames teleported with saddlebags full of ore.
 
 ## Known limits
 

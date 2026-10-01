@@ -191,7 +191,8 @@ namespace BossGatedPortals
             GateAttachedCartCargo = Admin(compat, "GateAttachedCartCargo", true,
                 "If a cart-teleport mod carries an attached cart through, gate its cargo with the same check.");
             WarnOnConflictingMods = Admin(compat, "WarnOnConflictingMods", true,
-                "Log a warning at startup if another mod that changes item teleport rules is installed.");
+                "Log a warning at startup if another mod that changes item teleport rules is installed (or set to " +
+                "let every item through), and once per item if a tier-listed item is teleportable anyway.");
 
             LogPortalModDetection = Admin("0.6 - XPortal Compatibility", "LogPortalModDetection", true,
                 "Log the detected XPortal / XPortalNetworks version at startup, and warn if AnyPortal is present.");

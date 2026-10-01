@@ -18,9 +18,42 @@ namespace BossGatedPortals
         /// portalAllowsAll = the portal lets everything through in vanilla (e.g. the Stone Portal).
         /// Order: NeverTeleport, cheat tier, vanilla allow-all, then the boss tiers.
         /// </summary>
-        public static bool CanTeleport(Player player, ItemDrop.ItemData item, bool portalAllowsAll = false)
+        public static bool CanTeleport(Player player, ItemDrop.ItemData item, bool portalAllowsAll = false) =>
+            CollectBlockers(player, item, portalAllowsAll, null);
+
+        /// <summary>
+        /// CanTeleport, also adding what blocks the item to `blocked` (if given): the item itself and, for a
+        /// bag (see Bags), the blocking items inside it. Returns true if nothing blocks.
+        /// </summary>
+        public static bool CollectBlockers(Player player, ItemDrop.ItemData item, bool portalAllowsAll,
+            List<ItemDrop.ItemData> blocked)
         {
-            bool vanillaTeleportable = item.m_shared.m_teleportable;
+            // Bag mods mark a bag by vanilla rules for its contents: the bag itself counts as teleportable,
+            // and its contents are judged by our rules.
+            Inventory bag = Bags.Contents(item);
+            bool vanillaTeleportable = bag != null || item.m_shared.m_teleportable;
+
+            bool allowed = CanTeleportItem(player, item, vanillaTeleportable, portalAllowsAll);
+            if (!allowed)
+            {
+                if (blocked == null) return false;
+                blocked.Add(item);
+            }
+            if (bag != null)
+            {
+                foreach (ItemDrop.ItemData inner in bag.GetAllItems())
+                {
+                    if (CollectBlockers(player, inner, portalAllowsAll, blocked)) continue;
+                    if (blocked == null) return false;
+                    allowed = false;
+                }
+            }
+            return allowed;
+        }
+
+        private static bool CanTeleportItem(Player player, ItemDrop.ItemData item, bool vanillaTeleportable,
+            bool portalAllowsAll)
+        {
             bool cheatTier = item.m_shared.m_toolTier >= 1000;
             bool vanillaAllowAll = portalAllowsAll || Failsafe.TeleportAllSet();
 
@@ -43,7 +76,10 @@ namespace BossGatedPortals
 
             // Vanilla lets it through: only gated if an admin listed it and GateListedVanillaItems is on.
             if (vanillaTeleportable && (tier == null || !Settings.GateListedVanillaItems.Value))
+            {
+                if (tier != null) Compatibility.WarnListedButTeleportable(prefab, tier);
                 return true;
+            }
 
             return (tier != null && IsTierUnlocked(player, tier)) || FinalTierUnlocksEverything(player);
         }
@@ -128,10 +164,32 @@ namespace BossGatedPortals
     /// A postfix, not a prefix that skips vanilla (Harmony's advice for compatibility): vanilla answers
     /// first, then we replace the answer. Postfixes always run, so the gate still has the last word if
     /// another mod's prefix skips the original, and if we fail, vanilla's answer stands.
+    /// Bag mods (e.g. AdventureBackpacks) add their own postfix that checks the bag's inventory from
+    /// inside the player's check and can only turn the answer to "blocked". Our postfix runs first
+    /// (Priority.First) so it can't overwrite their "blocked", and any inventory checked while the
+    /// player's own check is running counts as carried, so the bag gets our rules, not vanilla's.
     /// </summary>
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.IsTeleportable))]
     internal static class InventoryIsTeleportablePatch
     {
+        // > 0 while the local player's own inventory is being checked (from our prefix to our finalizer).
+        private static int ownCheckDepth;
+
+        [HarmonyPriority(Priority.First)]
+        private static void Prefix(Inventory __instance, out bool __state)
+        {
+            __state = false;
+            try
+            {
+                __state = EnterOwnCheck(__instance);
+            }
+            catch (Exception e)
+            {
+                Failsafe.Report("Portal item check (start)", e);
+            }
+        }
+
+        [HarmonyPriority(Priority.First)]
         private static void Postfix(Inventory __instance, bool allowAllItems, ref bool __result)
         {
             try
@@ -144,6 +202,21 @@ namespace BossGatedPortals
             }
         }
 
+        // Finalizers run after every mod's postfix, so the bag checks above happen inside the window.
+        private static void Finalizer(bool __state)
+        {
+            if (__state) ownCheckDepth--;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static bool EnterOwnCheck(Inventory inventory)
+        {
+            Player player = Player.m_localPlayer;
+            if (player == null || player.GetInventory() != inventory) return false;
+            ownCheckDepth++;
+            return true;
+        }
+
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void Gatekeep(Inventory inventory, bool allowAllItems, ref bool result)
         {
@@ -153,6 +226,15 @@ namespace BossGatedPortals
 
             Inventory cart = AttachedCartCargo(player);
             bool own = player.GetInventory() == inventory;
+            if (!own && ownCheckDepth > 0)
+            {
+                // A bag (or other carried inventory) checked by another mod during the player's check:
+                // our rules decide, and its blocked items join the player's for the hint.
+                int before = Hints.LastBlocked.Count;
+                AddBlocked(player, inventory, allowAllItems);
+                result = Hints.LastBlocked.Count == before;
+                return;
+            }
             if (!own && inventory != cart)
                 return; // someone else's inventory: vanilla's answer stands
 
@@ -166,10 +248,7 @@ namespace BossGatedPortals
         private static void AddBlocked(Player player, Inventory inventory, bool allowAllItems)
         {
             foreach (ItemDrop.ItemData item in inventory.GetAllItems())
-            {
-                if (!Gate.CanTeleport(player, item, allowAllItems))
-                    Hints.LastBlocked.Add(item);
-            }
+                Gate.CollectBlockers(player, item, allowAllItems, Hints.LastBlocked);
         }
 
         // Vagon.m_instances is private in the game: reading it directly throws FieldAccessException at runtime.

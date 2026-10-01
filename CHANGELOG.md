@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+
+- Minor README fixes.
+
 ## 1.0.0
 
 Now **BossGatedPortals Plus**: still a portal progression mod first, with optional extras that are off by

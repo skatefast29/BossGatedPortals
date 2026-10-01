@@ -1,8 +1,8 @@
 {
   "name": "BossGatedPortals",
-  "version_number": "0.2.1",
+  "version_number": "1.0.0",
   "website_url": "https://github.com/skatefast29/BossGatedPortals",
-  "description": "Ores and metals can be teleported once you have defeated that biome's boss. Fully configurable.",
+  "description": "Portal progression: ores and metals teleport once their biome's boss is beaten. Optional extras, off by default: mounts, carts and tames that travel with you, and faster portals. Server-synced.",
   "dependencies": [
     "denikson-BepInExPack_Valheim-5.4.2351",
     "ValheimModding-Jotunn-2.30.2"

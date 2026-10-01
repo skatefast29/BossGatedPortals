@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using BepInEx;
 using HarmonyLib;
 using Jotunn.Managers;
@@ -18,9 +19,13 @@ namespace BossGatedPortals
     [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.Minor)]
     internal class BossGatedPortals : BaseUnityPlugin
     {
-        public const string PluginGUID = "com.jtmill01.bossgatedportals";
-        public const string PluginName = "BossGatedPortals";
-        public const string PluginVersion = "0.2.1";
+        // Names this mod's config file and is how Jotunn matches versions between server and clients.
+        // Changed in 1.0.0 (which every player had to update to anyway); never change it again.
+        public const string PluginGUID = "BarryWhite.BossGatedPortals";
+        public const string PluginName = "BossGatedPortals Plus";
+        // The ID before 1.0.0: its config file is carried over once (see CarryOverOldConfigFile).
+        private const string OldGUID = "com.jtmill01.bossgatedportals";
+        public const string PluginVersion = "1.0.0";
 
         public const string XPortalGUID = "yay.spikehimself.xportal";
 
@@ -29,6 +34,7 @@ namespace BossGatedPortals
 
         private void Awake()
         {
+            CarryOverOldConfigFile();
             Settings.Bind(Config);
             Settings.LogSummary();
 
@@ -39,19 +45,41 @@ namespace BossGatedPortals
             SynchronizationManager.OnConfigurationWindowClosed += ReportSettings;
             // Item IDs can only be checked once the game's item list exists.
             ItemManager.OnItemsRegistered += Settings.Validate;
-            ItemManager.OnItemsRegistered += Hints.LogUnmappedItems;
 
             PatchEachHook();
             CommandManager.Instance.AddConsoleCommand(new StatusCommand());
 
-            bool xportal = BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey(XPortalGUID);
-            Jotunn.Logger.LogInfo($"{PluginName} {PluginVersion} loaded. XPortal detected: {xportal}");
+            Jotunn.Logger.LogInfo($"{PluginName} {PluginVersion} loaded.");
         }
 
         // Start runs after every plugin's Awake, so all installed mods are known by now.
         private void Start()
         {
             Compatibility.LogInstalledMods();
+            Travel.LogStandDown();
+            PortalSpeed.LogStandDown();
+        }
+
+        /// <summary>
+        /// The config file is named after the plugin ID, which changed in 1.0.0. The first time this version
+        /// starts, the old file's settings become the new file's (renamed settings are then carried over by
+        /// Settings.Migrate), and the old file is renamed to a backup so it isn't read again.
+        /// </summary>
+        private void CarryOverOldConfigFile()
+        {
+            try
+            {
+                string old = Path.Combine(BepInEx.Paths.ConfigPath, OldGUID + ".cfg");
+                if (!File.Exists(old) || File.Exists(Config.ConfigFilePath)) return;
+                File.Copy(old, Config.ConfigFilePath);
+                Config.Reload();
+                File.Move(old, Path.Combine(BepInEx.Paths.ConfigPath, PluginGUID + ".cfg.before-1.0.0"));
+                Jotunn.Logger.LogInfo($"Settings carried over from the old config file to {Path.GetFileName(Config.ConfigFilePath)}.");
+            }
+            catch (Exception e)
+            {
+                Jotunn.Logger.LogWarning($"Couldn't carry over the old config file; starting from defaults. {e.Message}");
+            }
         }
 
         /// <summary>
@@ -80,7 +108,6 @@ namespace BossGatedPortals
             Settings.Parse();
             Settings.LogSummary();
             Settings.Validate();
-            Hints.LogUnmappedItems();
         }
 
         // No OnDestroy/UnpatchSelf: the Valheim modding wiki advises against unpatching on shutdown.

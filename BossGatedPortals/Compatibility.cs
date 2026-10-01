@@ -9,7 +9,7 @@ namespace BossGatedPortals
 {
     /// <summary>
     /// Startup log lines about other installed mods: item-teleport mods that clash with this one
-    /// (WarnOnConflictingMods) and the portal mods we work alongside (LogPortalModDetection).
+    /// (WarnOnConflictingMods), and the XPortal versions we work alongside (always logged, one line).
     /// Mods are matched by GUID or plugin name, ignoring case, spaces, dashes and underscores,
     /// because several of them don't publish their GUID.
     /// </summary>
@@ -19,12 +19,17 @@ namespace BossGatedPortals
         private static readonly Dictionary<string, string> Conflicts = new Dictionary<string, string>
         {
             { "unrestrictedportals", "it changes which items portals allow" },
-            { "teleporteverything", "turn its item transport OFF; keep its creature/cart transport if you want it" },
             { "advancedportals", "it has its own item tiers for portals; two item gates together give unpredictable results" },
             { "progressionportals", "it has its own progression item gate; two item gates together give unpredictable results" },
             { "worldadvancementprogression", "it hooks the SAME item check and can switch a block back to allowed; never run it alongside this mod" },
             { "serversideqol.portalprogression", "it holds blocked items for you near a portal and gives them back " +
                 "after you travel, which skips this gate; remove it or set its Enabled = false" },
+            { "adjustableportals", "its item check runs after this one and turns a block back into allowed whenever " +
+                "your own inventory passes its boss lists, so cart cargo, bag contents and this mod's player " +
+                "requirement stop being gated; don't run it alongside this mod" },
+            { "serversideqol.tameassist", "with its TeleportFollowers on (the default), tames following you are moved to " +
+                "you after a portal trip, so items in their saddlebags skip this mod's tiers; turn TeleportFollowers off, " +
+                "or keep locked items out of saddlebags" },
             { "teleportationmeads", "its meads teleport you as if every item were allowed, so they carry items this mod's tiers still lock" },
         };
 
@@ -39,6 +44,8 @@ namespace BossGatedPortals
                 ("Items", "enabled", "True"), ("Items", "noTeleportPrevention", "True")),
             new SettingConflict("zenox.teleporteverything", "set TransportRestrictedItems to false in its [Items] section",
                 ("General", "Enabled", "True"), ("Items", "TransportRestrictedItems", "True")),
+            new SettingConflict(Travel.TeleportEverythingForkGUID, "set 'Transport Ores' to false in its [--- Transport Items ---] section",
+                ("--- Mod ---", "Enable Mod", "True"), ("--- Transport Items ---", "Transport Ores", "True")),
             new SettingConflict("org.bepinex.plugins.targetportal", "set 'Ignore item teleport restrictions' to Default or Never",
                 ("1 - General", "Ignore item teleport restrictions", "Always")),
             new SettingConflict("com.xman0922.unifiedtargetportal", "set IgnoreItemTeleportRestrictions to Default or Never",
@@ -91,22 +98,19 @@ namespace BossGatedPortals
                 }
                 foreach (SettingConflict conflict in SettingConflicts)
                     CheckSetting(conflict);
-            }
 
-            if (Settings.LogPortalModDetection.Value)
-            {
-                PluginInfo xportal = plugins.FirstOrDefault(p => p.Metadata.GUID == BossGatedPortals.XPortalGUID);
-                PluginInfo networks = plugins.FirstOrDefault(p => Matches(p, "xportalnetworks"));
                 PluginInfo anyPortal = plugins.FirstOrDefault(p => p.Metadata.GUID == "com.sweetgiorni.anyportal" || Matches(p, "anyportal"));
-
-                Jotunn.Logger.LogInfo("LogPortalModDetection: XPortal " + (xportal != null ? Describe(xportal) : "not installed") +
-                    ", XPortalNetworks " + (networks != null ? Describe(networks) : "not installed") + ".");
                 if (anyPortal != null)
                 {
-                    Jotunn.Logger.LogWarning($"LogPortalModDetection: {Describe(anyPortal)} is installed. " +
+                    Jotunn.Logger.LogWarning($"WarnOnConflictingMods: {Describe(anyPortal)} is installed. " +
                         "XPortal refuses to load alongside it; remove AnyPortal and use XPortal instead.");
                 }
             }
+
+            PluginInfo xportal = plugins.FirstOrDefault(p => p.Metadata.GUID == BossGatedPortals.XPortalGUID);
+            PluginInfo networks = plugins.FirstOrDefault(p => Matches(p, "xportalnetworks"));
+            Jotunn.Logger.LogInfo("Portal mods: XPortal " + (xportal != null ? Describe(xportal) : "not installed") +
+                ", XPortalNetworks " + (networks != null ? Describe(networks) : "not installed") + ".");
         }
 
         /// <summary>
@@ -142,7 +146,7 @@ namespace BossGatedPortals
             if (!Settings.WarnOnConflictingMods.Value || !warnedListed.Add(prefab)) return;
             Jotunn.Logger.LogWarning($"WarnOnConflictingMods: '{prefab}' is listed in the {tier.Name} tier but is " +
                 "teleportable anyway (vanilla, or another mod changed it), so it passes portals before that tier " +
-                "unlocks. To gate it, set GateListedVanillaItems = true.");
+                "unlocks. To lock it until its tier, set LockListedItemsAlways = true.");
         }
 
         /// <summary>Another mod's setting, or null if that mod (or the setting) isn't loaded.</summary>

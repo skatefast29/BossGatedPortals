@@ -13,8 +13,20 @@ namespace BossGatedPortals
     /// </summary>
     internal static class Hints
     {
+        /// <summary>An item that failed Gate.CanTeleport, and where it is (for {where}).</summary>
+        public struct Blocked
+        {
+            public ItemDrop.ItemData Item;
+            /// <summary>"" = the player's own inventory; else e.g. " in your $tool_cart" (MessageHud localizes).</summary>
+            public string Where;
+        }
+
         /// <summary>Items that failed Gate.CanTeleport in the last local-inventory portal check.</summary>
-        public static readonly List<ItemDrop.ItemData> LastBlocked = new List<ItemDrop.ItemData>();
+        public static readonly List<Blocked> LastBlocked = new List<Blocked>();
+
+        /// <summary>The 0.2.x default, upgraded to the one with {where} if never changed (Settings.Migrate).</summary>
+        public const string OldDefaultFormat = "An item blocks the portal. {hint}";
+        public const string DefaultFormat = "An item{where} blocks the portal. {hint}";
 
         private static float lastHintTime = float.NegativeInfinity;
 
@@ -29,9 +41,10 @@ namespace BossGatedPortals
             Tier final = tiers[tiers.Count - 1];
 
             Tier earliest = null;
-            ItemDrop.ItemData blocker = null;
-            foreach (ItemDrop.ItemData item in LastBlocked)
+            Blocked blocker = default;
+            foreach (Blocked blocked in LastBlocked)
             {
+                ItemDrop.ItemData item = blocked.Item;
                 string prefab = Gate.PrefabName(item);
                 if (prefab != null && Settings.NeverTeleportItems.Contains(prefab)) continue;
 
@@ -50,7 +63,7 @@ namespace BossGatedPortals
                 if (earliest == null || tier.Index < earliest.Index)
                 {
                     earliest = tier;
-                    blocker = item;
+                    blocker = blocked;
                 }
             }
 
@@ -59,13 +72,14 @@ namespace BossGatedPortals
             // Item names stay as $tokens; MessageHud localizes the whole message.
             return Settings.HintFormat.Value
                 .Replace("{hint}", earliest.Hint)
-                .Replace("{item}", blocker.m_shared.m_name);
+                .Replace("{item}", blocker.Item.m_shared.m_name)
+                .Replace("{where}", blocker.Where ?? "");
         }
 
-        /// <summary>At startup, lists teleport-blocked items that no tier mentions.</summary>
-        public static void LogUnmappedItems()
+        /// <summary>Part of LogItemChecks (see Settings.Validate): lists teleport-blocked items that no tier mentions.</summary>
+        public static void LogUntieredItems()
         {
-            if (ObjectDB.instance == null || !Settings.LogUnmappedItems.Value) return;
+            if (ObjectDB.instance == null) return;
 
             var unmapped = new List<string>();
             foreach (GameObject prefab in ObjectDB.instance.m_items)
@@ -77,9 +91,9 @@ namespace BossGatedPortals
             }
 
             if (unmapped.Count == 0)
-                Jotunn.Logger.LogInfo("LogUnmappedItems: every teleport-blocked item is listed in a tier.");
+                Jotunn.Logger.LogInfo("LogItemChecks: every teleport-blocked item is listed in a tier.");
             else
-                Jotunn.Logger.LogInfo("LogUnmappedItems: teleport-blocked items not in any tier " +
+                Jotunn.Logger.LogInfo("LogItemChecks: teleport-blocked items not in any tier " +
                     "(locked until the final tier): " + string.Join(", ", unmapped.OrderBy(n => n)));
         }
 
@@ -107,7 +121,7 @@ namespace BossGatedPortals
             private static bool SwapForHint(Player player, ref MessageHud.MessageType type, ref string msg)
             {
                 if (msg != "$msg_noteleport" || player != Player.m_localPlayer ||
-                    !Settings.Enabled.Value || !Settings.ShowUnlockHint.Value)
+                    !Settings.Enabled.Value || string.IsNullOrEmpty(Settings.HintFormat.Value))
                     return true;
 
                 string hint = BuildMessage();

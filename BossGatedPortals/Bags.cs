@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using BepInEx.Bootstrap;
 
@@ -21,14 +22,10 @@ namespace BossGatedPortals
         public const string BackpacksGUID = "org.bepinex.plugins.backpacks";
         public const string RustyBagsGUID = "RustyMods.RustyBags";
 
-        // Smoothbrain's Backpacks
+        // Smoothbrain's Backpacks: item.Data().Get<ItemContainer>()?.Inventory, compiled once into a direct
+        // call (the inventory grid asks about every item every frame; a reflection Invoke costs ~10x more).
         private static bool backpacksResolved;
-        private static MethodInfo data;          // ItemDataManager.ItemExtensions.Data(ItemData)
-        private static MethodInfo getContainer;  // ItemInfo.Get<Backpacks.ItemContainer>(string key)
-        private static FieldInfo containerInventory; // ItemContainer.Inventory
-        // Reused argument arrays: the inventory grid asks about every item every frame. Main thread only.
-        private static readonly object[] dataArgs = new object[1];
-        private static readonly object[] getArgs = { "" };
+        private static Func<ItemDrop.ItemData, Inventory> backpackInventory;
 
         // RustyBags
         private static bool rustyResolved;
@@ -49,17 +46,13 @@ namespace BossGatedPortals
             if (!ResolveBackpacks()) return null;
             try
             {
-                dataArgs[0] = item;
-                object info = data.Invoke(null, dataArgs);
-                dataArgs[0] = null;
-                object container = info == null ? null : getContainer.Invoke(info, getArgs);
-                return container == null ? null : containerInventory.GetValue(container) as Inventory;
+                return backpackInventory(item);
             }
             catch (Exception e)
             {
                 // Bags fall back to Backpacks' own (vanilla) rule: blocked until the final tier.
                 Failsafe.Report("Backpacks bag check", e);
-                data = null;
+                backpackInventory = null;
                 return null;
             }
         }
@@ -81,25 +74,54 @@ namespace BossGatedPortals
 
         private static bool ResolveBackpacks()
         {
-            if (backpacksResolved) return data != null;
+            if (backpacksResolved) return backpackInventory != null;
             Assembly asm = LoadedAssembly(BackpacksGUID, ref backpacksResolved);
             if (asm == null) return false;
 
             Type container = asm.GetType("Backpacks.ItemContainer");
-            data = asm.GetType("ItemDataManager.ItemExtensions")?.GetMethod("Data", new[] { typeof(ItemDrop.ItemData) });
+            MethodInfo data = asm.GetType("ItemDataManager.ItemExtensions")?.GetMethod("Data", new[] { typeof(ItemDrop.ItemData) });
             MethodInfo get = data?.ReturnType.GetMethods().FirstOrDefault(m =>
                 m.Name == "Get" && m.IsGenericMethodDefinition && m.GetParameters().Length == 1);
-            containerInventory = container?.GetField("Inventory");
+            FieldInfo inventory = container?.GetField("Inventory");
 
-            if (container == null || get == null || containerInventory == null)
+            if (container == null || get == null || inventory == null || !typeof(Inventory).IsAssignableFrom(inventory.FieldType))
             {
-                data = null;
                 ApiChanged("Backpacks");
                 return false;
             }
-            getContainer = get.MakeGenericMethod(container);
+            MethodInfo getContainer = get.MakeGenericMethod(container);
+            try
+            {
+                backpackInventory = Compile(data, getContainer, container, inventory);
+            }
+            catch (Exception e)
+            {
+                // Can't compile here: the same calls through reflection, slower but the same answer.
+                Jotunn.Logger.LogInfo($"Backpacks: using the slower bag check ({e.Message}).");
+                object[] args = { "" };
+                backpackInventory = item =>
+                {
+                    object found = getContainer.Invoke(data.Invoke(null, new object[] { item }), args);
+                    return found == null ? null : inventory.GetValue(found) as Inventory;
+                };
+            }
             Jotunn.Logger.LogInfo("Backpacks detected: items in its bags unlock with their tiers.");
             return true;
+        }
+
+        /// <summary>item => ItemExtensions.Data(item).Get&lt;ItemContainer&gt;("")?.Inventory, as one compiled call.</summary>
+        private static Func<ItemDrop.ItemData, Inventory> Compile(MethodInfo data, MethodInfo getContainer,
+            Type container, FieldInfo inventory)
+        {
+            ParameterExpression item = Expression.Parameter(typeof(ItemDrop.ItemData), "item");
+            ParameterExpression bag = Expression.Variable(container, "bag");
+            Expression body = Expression.Block(new[] { bag },
+                Expression.Assign(bag, Expression.Call(Expression.Call(data, item), getContainer, Expression.Constant(""))),
+                Expression.Condition(
+                    Expression.Equal(bag, Expression.Constant(null, container)),
+                    Expression.Constant(null, typeof(Inventory)),
+                    Expression.Convert(Expression.Field(bag, inventory), typeof(Inventory))));
+            return Expression.Lambda<Func<ItemDrop.ItemData, Inventory>>(body, item).Compile();
         }
 
         private static bool ResolveRustyBags()

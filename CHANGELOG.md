@@ -1,5 +1,65 @@
 # Changelog
 
+## 1.0.0
+
+Now **BossGatedPortals Plus**: still a portal progression mod first, with optional extras that are off by
+default. Same Thunderstore package, so it updates as usual.
+
+**Updating**
+- Server owners: update the server and every player (players need 1.0.x).
+- The config file is now `BarryWhite.BossGatedPortals.cfg`. Your old file's settings are copied into it on
+  first start, then carried over to the new setting names below; the old file is kept as
+  `BarryWhite.BossGatedPortals.cfg.before-1.0.0`.
+
+**Progression**
+- New installs unlock a tier for everyone once its boss is killed on the world (`UnlockWhen = BossKilled`).
+  Existing servers keep their current rule.
+- The hint now says where the blocking item is when it isn't in your inventory: "in your Cart",
+  "in Lox's saddlebags", "in your Explorer's Backpack" (new `{where}` in `HintFormat`; an unchanged hint
+  text is updated automatically).
+- `LogItemChecks` now also warns about a tier missing the world key or boss item it needs (it would never
+  unlock).
+- Inventory icons and tooltips are about three times faster: item names and unlocked tiers are looked up
+  once instead of for every item, and Backpacks bag checks are a direct call instead of a slow lookup.
+- Saddlebags on tames the TeleportEverything 1.0 fork brings along are gated too. New startup warnings: the
+  fork's `Transport Ores` (lets every item through), and ServersideQoL TameAssist's follower teleport
+  (following tames' saddlebags skip the gate).
+
+**Optional extras (off by default)**
+- `[5 - Travel]`, each switched on separately:
+  - `BringMount`: ride into a portal and your mount comes with you; you're put back in the saddle.
+  - `BringCart`: a cart you're pulling comes with you and is hitched back to you.
+  - `BringTames`: tames near you come with you. Choose which with the `Tame…` settings right under it:
+    following you, named, or all tames, how far away, how many, which creatures, and whether summons come
+    too. Tames following another player, or pulling a cart, never come.
+  - A cart your horse pulls (OdinHorse) comes along with BringMount and BringCart both on, and is hitched
+    back to the horse; with BringCart off it's unhitched and left behind.
+  - Carts are always hitched back to whoever pulled them, even with other animals nearby.
+  - Cart cargo and saddlebags follow the tiers like your own inventory, and a portal doesn't glow while
+    they hold something locked.
+  - Only through portals you walk into (vanilla and XPortal).
+- Steps aside for mods that already do the same job, with a line in the log: Travel while either
+  TeleportEverything (Zenox's, or the 1.0 fork) is on; Portal Speed while QuickTeleport (OdinPlus or
+  Muindor), FastTeleport or Proper Portals is installed.
+- `[4 - Portal Speed]`, set to the game's own timings: `FadeSeconds` (default 1) sets how fast the screen
+  fades when you step into a portal, down to 0 for instant; `MinimumLoadingSeconds` (default 8) sets the
+  shortest loading screen, down to 0. Real loading time is never cut.
+
+**Shorter, regrouped config** (your settings carry over automatically; the old lines are removed)
+- Sections: 1 General, 2 Item Rules, 3 Messages, 4 Portal Speed, 5 Travel, 6 Compatibility, 7 Admin,
+  8 Client.
+- `RequireWorldKey` and `RequirePlayerBossItem` became one choice, `UnlockWhen`: `BossKilled`,
+  `BossKilledAndDropHeld` or `DropHeld`.
+- `ShowUnlockHint` is gone: an empty `HintFormat` turns the hint off.
+- `GateAttachedCartCargo` and `GateTameCargo` became `GateCompanionCargo`.
+- `GateListedVanillaItems` is now `LockListedItemsAlways`, with a clearer description.
+- `ValidateItemIds` and `LogUnmappedItems` became `LogItemChecks`; `EnableStatusCommand` is now
+  `StatusCommand`.
+- `LogPortalModDetection` is gone: the XPortal version is always logged, and the AnyPortal warning is part
+  of `WarnOnConflictingMods`.
+- `RespectVanillaAllowAll` moved to Item Rules; `HintPosition` and `HintCooldownSeconds`, the settings
+  each player chooses, have their own Client section.
+
 ## 0.2.1
 
 - New `GateTameCargo` setting (on by default): when TeleportEverything, or Waypoints with "Teleport Tames"

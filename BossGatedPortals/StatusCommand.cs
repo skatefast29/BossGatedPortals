@@ -24,9 +24,9 @@ namespace BossGatedPortals
                 context.AddString("Usage: portalgate status");
                 return;
             }
-            if (!Settings.EnableStatusCommand.Value)
+            if (!Settings.StatusCommand.Value)
             {
-                context.AddString("portalgate status is turned off (EnableStatusCommand).");
+                context.AddString("portalgate status is turned off (StatusCommand).");
                 return;
             }
             if (!SynchronizationManager.Instance.PlayerIsAdmin)
@@ -43,7 +43,7 @@ namespace BossGatedPortals
             }
 
             context.AddString($"BossGatedPortals {BossGatedPortals.PluginVersion} - Enabled={Settings.Enabled.Value}, " +
-                $"WorldKey={Settings.EffectiveRequireWorldKey}, PlayerBossItem={Settings.RequirePlayerBossItem.Value}, " +
+                $"UnlockWhen={Settings.UnlockWhen.Value}, " +
                 $"Cumulative={Settings.CumulativeTiers.Value}, AdminBypass={Settings.AdminBypass.Value}");
 
             foreach (Tier t in Settings.Tiers)

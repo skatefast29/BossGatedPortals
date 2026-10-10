@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- TargetPortal: mounts, carts and tames now come along when you pick a portal on its map (`BringMount`,
+  `BringCart`, `BringTames`), and their cargo is gated there too.
+
 ## 1.0.2
 
 - Minor README fixes.

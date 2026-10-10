@@ -13,6 +13,8 @@ namespace BossGatedPortals
     [BepInDependency(XPortalGUID, BepInDependency.DependencyFlags.SoftDependency)]
     // Load after Waypoints when it's installed, so its item check can be found (see Tames.cs).
     [BepInDependency(Tames.WaypointsGUID, BepInDependency.DependencyFlags.SoftDependency)]
+    // Load after TargetPortal when it's installed, so its portal map can be found (see TargetPortalClickPatch).
+    [BepInDependency(TargetPortalClickPatch.TargetPortalGUID, BepInDependency.DependencyFlags.SoftDependency)]
     // Every client must have the mod, with the server's major.minor version; patch versions may differ
     // (Jotunn's recommendation). Bump the minor version for anything that changes how client and server
     // must agree (config meaning, synced settings, gate rules); keep bug fixes to patch versions.

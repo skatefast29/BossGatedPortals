@@ -148,7 +148,8 @@ and LoxSaddleBags 2.0.2. The other mods below were checked by reading their code
 - **Mods that change items:** if another mod makes a tier-listed item teleportable (for example the item
   file of Creature Level & Loot Control), the log says so once. Set `LockListedItemsAlways = true` to lock
   it anyway.
-- **Mounts, carts and tames:** `BringMount`, `BringCart` and `BringTames` work with vanilla and XPortal portals.
+- **Mounts, carts and tames:** `BringMount`, `BringCart` and `BringTames` work with vanilla, XPortal and
+  TargetPortal portals (picking a portal on TargetPortal's map).
   They do nothing while either TeleportEverything is on, since it moves creatures and carts itself.
   OdinHorse: a cart your horse pulls comes along (and is hitched back to it) when both `BringMount` and
   `BringCart` are on. A following tame that's pulling a cart stays behind.

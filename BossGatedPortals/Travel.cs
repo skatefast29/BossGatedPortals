@@ -18,8 +18,9 @@ namespace BossGatedPortals
     /// portal before anything moves.
     ///
     /// How a trip works (all on the teleporting player's own client):
-    /// 1. TeleportWorld.Teleport marks "this teleport is a portal" (atPortal). Other teleports (map mods,
-    ///    admin commands, death) never take anything along.
+    /// 1. TeleportWorld.Teleport marks "this teleport is a portal" (atPortal); so does TargetPortal's map
+    ///    click (TargetPortalClickPatch). Other teleports (map mods, admin commands, death) never take
+    ///    anything along.
     /// 2. Player.TeleportTo: before it runs, note the mount, cart and tames; once it has started the
     ///    teleport, get off the mount and send everything to the portal's exit. Their saved position (ZDO)
     ///    is what matters: the game unloads them and spawns them again when you arrive.
@@ -58,8 +59,9 @@ namespace BossGatedPortals
 
         /// <summary>
         /// True while a portal checks the player: when they step in (TeleportWorld.Teleport, which also starts
-        /// the trip) and while it decides whether to glow (TeleportWorld.UpdatePortal). Cargo of what travels
-        /// along is gated only then, so the glow and the step-in always agree. See PortalCheckPatch.
+        /// the trip, or TargetPortal's map click) and while it decides whether to glow (TeleportWorld.UpdatePortal).
+        /// Cargo of what travels along is gated only then, so the glow and the step-in always agree. See
+        /// PortalCheckPatch.
         /// </summary>
         internal static bool atPortal;
 
@@ -645,6 +647,40 @@ namespace BossGatedPortals
             else Jotunn.Logger.LogWarning("Portal glow check (TeleportWorld.UpdatePortal) not found (game update?). " +
                 "Portals may glow while a cart or saddlebag holds a locked item; stepping in still refuses.");
         }
+
+        private static void Prefix() => Travel.atPortal = true;
+
+        private static void Finalizer() => Travel.atPortal = false;
+    }
+
+    /// <summary>
+    /// TargetPortal (org.bepinex.plugins.targetportal) opens a map when you step into a portal instead of the
+    /// game's portal teleport; its Map.HandlePortalClick (private) then runs the item check and
+    /// Player.TeleportTo itself. Marked as a portal check like PortalCheckPatch, so travel cargo is gated and
+    /// the mount, cart and tames come along the same way. Skipped when TargetPortal isn't installed; a normal
+    /// map click goes through the same method but never reaches the check or the teleport.
+    /// </summary>
+    [HarmonyPatch]
+    internal static class TargetPortalClickPatch
+    {
+        public const string TargetPortalGUID = "org.bepinex.plugins.targetportal";
+        private static bool resolved;
+        private static MethodBase target;
+
+        // Harmony may call Prepare more than once: look up (and warn) only the first time.
+        private static bool Prepare()
+        {
+            if (resolved) return target != null;
+            resolved = true;
+            Type map = Tames.PluginType(TargetPortalGUID, "TargetPortal.Map", out bool installed);
+            target = map == null ? null : AccessTools.Method(map, "HandlePortalClick");
+            if (installed && target == null)
+                Jotunn.Logger.LogWarning("TargetPortal's portal map changed (TargetPortal update?). Mounts, carts and " +
+                    "tames don't travel through its portals; its item check still uses this mod's tiers.");
+            return target != null;
+        }
+
+        private static MethodBase TargetMethod() => target;
 
         private static void Prefix() => Travel.atPortal = true;
 

@@ -70,8 +70,12 @@
   </Target>
 
   <!-- Copy the built DLL into the Gale profile so the game loads it. -->
+  <!-- MOD_DEPLOYFOLDER: the plugins subfolder; set it to the Gale-installed folder to replace that copy. -->
+  <PropertyGroup>
+    <MOD_DEPLOYFOLDER Condition=" '$(MOD_DEPLOYFOLDER)' == '' ">BossGatedPortals</MOD_DEPLOYFOLDER>
+  </PropertyGroup>
   <Target Name="DeployToGale" AfterTargets="Build" Condition=" '$(MOD_DEPLOYPATH)' != '' ">
-    <Copy SourceFiles="$(TargetDir)$(TargetFileName)" DestinationFolder="$(MOD_DEPLOYPATH)\BossGatedPortals" />
-    <Message Text="Copied $(TargetFileName) to $(MOD_DEPLOYPATH)\BossGatedPortals" Importance="high" />
+    <Copy SourceFiles="$(TargetDir)$(TargetFileName)" DestinationFolder="$(MOD_DEPLOYPATH)\$(MOD_DEPLOYFOLDER)" />
+    <Message Text="Copied $(TargetFileName) to $(MOD_DEPLOYPATH)\$(MOD_DEPLOYFOLDER)" Importance="high" />
   </Target>
 </Project>

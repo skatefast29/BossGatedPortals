@@ -2,8 +2,9 @@
 
 ## 1.1.0
 
-- TargetPortal: mounts, carts and tames now come along when you pick a portal on its map (`BringMount`,
-  `BringCart`, `BringTames`), and their cargo is gated there too.
+- **Added TargetPortal support.** Mounts, carts and tames now come along when you pick a portal on
+  TargetPortal's map (`BringMount`, `BringCart`, `BringTames`), and their cargo is gated there too. Supported
+  portal mods are now XPortal and TargetPortal.
 - New minor version: the server and every player need 1.1.x.
 
 ## 1.0.2

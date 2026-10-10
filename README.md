@@ -7,6 +7,9 @@ never letting metal through.
 That's all it does out of the box. The **optional extras** further down (companions that travel with
 you, faster portals) are **off by default**.
 
+Works with the portal mods **XPortal** and **TargetPortal**: the progression rules apply through their
+portals, and the optional companion travel works with both (see [Compatibility](#compatibility)).
+
 All settings are server-synced and editable live with F1.
 
 Source: [github.com/skatefast29/BossGatedPortals](https://github.com/skatefast29/BossGatedPortals)
@@ -37,6 +40,8 @@ These change nothing until you switch them on in F1.
 - **Mount:** ride into a portal and arrive in the saddle.
 - **Cart:** arrives hitched to you, or to your horse (OdinHorse).
 - **Tames:** following, named, or all tames nearby, with radius, height, headcount and creature lists.
+- Works through vanilla portals, **XPortal** and **TargetPortal** (pick a portal on its map and your
+  companions come along).
 - Their cargo follows the same progression rules as your own inventory.
 - Steps aside automatically while TeleportEverything (either version) is on, since it does the same job.
 
@@ -46,13 +51,13 @@ These change nothing until you switch them on in F1.
   built-in delay. Real loading is never skipped.
 - Steps aside automatically while QuickTeleport, FastTeleport or Proper Portals is installed.
 
-Server and clients need the same major.minor version (e.g. any 1.0.x).
+Server and clients need the same major.minor version (e.g. any 1.1.x).
 
 ## Installation
 
 **Requires:** BepInExPack_Valheim, Jotunn.
 
-- Install on the server and every client (same major.minor version, e.g. any 1.0.x; the newest is recommended).
+- Install on the server and every client (same major.minor version, e.g. any 1.1.x; the newest is recommended).
 - **Gale / r2modman:** install or update *BossGatedPortals* as usual, or *Import → local mod* and pick the zip.
 - **Manual:** copy `BossGatedPortals.dll` to `BepInEx/plugins/BossGatedPortals/`.
 
@@ -124,10 +129,14 @@ All admin-only and server-synced, except **8 - Client**, which each player sets 
 
 ## Compatibility
 
-Tested in game with XPortal 1.2.25, alongside AdventureBackpacks 2.2.5, Backpacks 1.3.10, OdinHorse 1.7.5
+**Supported portal mods:** **XPortal** and **TargetPortal** (tested in game with XPortal 1.2.25 and
+TargetPortal 1.2.7). The progression rules, hints and the companion travel (`BringMount`, `BringCart`,
+`BringTames`) all work through their portals.
+
+Also tested in game alongside AdventureBackpacks 2.2.5, Backpacks 1.3.10, OdinHorse 1.7.5
 and LoxSaddleBags 2.0.2. The other mods below were checked by reading their code:
 
-- **Portal mods:** TargetPortal, Unified Target Portal, XPortalNetworks, PortalRules, PotalMap, Better
+- **Other portal mods:** Unified Target Portal, XPortalNetworks, PortalRules, PotalMap, Better
   Portal, Portal Stations, Waypoints and Waystones all ask the game's own item check, so the tiers and
   unlock hints apply to them too. Their own "ignore item restrictions" settings are warned about at startup
   when they're on.
@@ -167,8 +176,9 @@ and LoxSaddleBags 2.0.2. The other mods below were checked by reading their code
 ## Known limits
 
 - Checks run client-side; a modified client can bypass them.
-- Mounts, carts and tames travel only through portals you walk into, not with map-teleport mods
-  (TargetPortal and the like). A cart you're pulling is still checked there (`GateCompanionCargo`).
+- Mounts, carts and tames travel through vanilla, XPortal and TargetPortal portals, not with other
+  map-teleport mods (Unified Target Portal, PotalMap and the like). A cart you're pulling is still checked
+  there (`GateCompanionCargo`).
 - After Valheim updates, check the log for `LogItemChecks` warnings.
 
 ## Source and bug reports
@@ -180,3 +190,4 @@ Source code and bug reports are on [GitHub](https://github.com/skatefast29/BossG
 - [Jotunn](https://github.com/Valheim-Modding/Jotunn) and [JotunnModStub](https://github.com/Valheim-Modding/JotunnModStub) (MIT No Attribution)
 - [VentureValheim](https://github.com/OrianaVenture/VentureValheim) (MIT), for the per-boss unlock approach
 - [XPortal](https://github.com/SpikeHimself/XPortal) by SpikeHimself (no code used)
+- [TargetPortal](https://github.com/blaxxun-boop/TargetPortal) by Smoothbrain (no code used)

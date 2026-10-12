@@ -69,6 +69,12 @@ namespace BossGatedPortals
         public static ConfigEntry<HintPosition> HintPositionSetting;
         public static ConfigEntry<float> HintCooldownSeconds;
 
+        // [9 - Portal Limit], the PortalLimit... settings right under PortalLimitEnabled
+        public static ConfigEntry<bool> PortalLimitEnabled;
+        public static ConfigEntry<int> PortalLimitStart;
+        public static ConfigEntry<bool> PortalLimitAdminsExempt;
+        public static ConfigEntry<string> PortalLimitMessage;
+
         /// <summary>Parsed tiers, in order T0..T7. Rebuilt whenever a setting changes.</summary>
         public static List<Tier> Tiers = new List<Tier>();
         public static HashSet<string> NeverTeleportItems = new HashSet<string>();
@@ -90,6 +96,7 @@ namespace BossGatedPortals
             public string Name;
             public ConfigEntry<string> GlobalKey, BossItem, Items, Hint, UnlockMessage;
             public ConfigEntry<bool> AllowEverything; // final tier only
+            public ConfigEntry<int> MaxPortals;
         }
 
         private static readonly List<TierEntries> tierEntries = new List<TierEntries>();
@@ -97,7 +104,7 @@ namespace BossGatedPortals
         // Defaults = the verified values in the BossGatedPortals.cfg spec.
         private static readonly string[][] TierDefaults =
         {
-            // name, global key, boss item, items, hint, unlock message
+            // name, global key, boss item, items, hint, unlock message (MaxPortals: TierMaxPortals)
             new[] { "Meadows", "defeated_eikthyr", "HardAntler", "", "", "" },
             new[] { "Black Forest", "defeated_gdking", "CryptKey",
                 "CopperOre, Copper, CopperScrap, TinOre, Tin, Bronze, BronzeScrap",
@@ -123,6 +130,9 @@ namespace BossGatedPortals
                 "The portal will not carry this until the far North is conquered.",
                 "The portals roar. Nothing is barred from passage now." },
         };
+
+        // [Tn] MaxPortals defaults; -1 = no limit once the final boss falls.
+        private static readonly int[] TierMaxPortals = { 4, 6, 8, 10, 12, 16, 20, -1 };
 
         // Hildir's quest chests -> tier of the biome whose Hildir quest drops them (VERIFIED 1.0.15).
         private static readonly Dictionary<string, int> HildirChestTiers = new Dictionary<string, int>
@@ -277,6 +287,22 @@ namespace BossGatedPortals
                 "Minimum seconds between repeat hints while standing in a portal.",
                 new AcceptableValueRange<float>(0f, 60f));
 
+            const string limit = "9 - Portal Limit";
+            const string limitOnly = "Only used when PortalLimitEnabled is on. ";
+            PortalLimitEnabled = Admin(limit, "PortalLimitEnabled", false,
+                "Limit how many portals the whole world can hold (everyone's together), raised as bosses are killed. " +
+                "Each tier's MaxPortals sets the limit once that tier's boss is dead. Portals that already exist are " +
+                "never removed; a world over the limit just can't build more. Every kind of portal counts.");
+            PortalLimitStart = Admin(limit, "PortalLimitStart", 2,
+                limitOnly + "Portals the world can hold before any tier's boss is killed. 0 = none.",
+                new AcceptableValueRange<int>(0, 1000));
+            PortalLimitAdminsExempt = Admin(limit, "PortalLimitAdminsExempt", false,
+                limitOnly + "If true, server admins can build portals past the limit (their portals still count).");
+            PortalLimitMessage = Admin(limit, "PortalLimitMessage",
+                "This world holds {count} of {limit} portals. A greater foe must fall before more can be built.",
+                limitOnly + "Shown when a portal can't be built. {count} = portals in the world, {limit} = the limit. " +
+                "Never name a boss.");
+
             for (int i = 0; i < TierDefaults.Length; i++)
             {
                 string[] d = TierDefaults[i];
@@ -299,6 +325,10 @@ namespace BossGatedPortals
                               : "Hint while locked. Never name a boss."),
                     UnlockMessage = Admin(section, "UnlockMessage", d[5],
                         "Server-wide message when this tier's world key is first set. Never name a boss."),
+                    MaxPortals = Admin(section, "MaxPortals", TierMaxPortals[i],
+                        "Portals the whole world can hold once this tier's boss is killed (world key set), when " +
+                        "PortalLimitEnabled is on. The highest unlocked tier's number counts. -1 = no limit.",
+                        new AcceptableValueRange<int>(-1, 1000)),
                 });
             }
         }
@@ -320,6 +350,7 @@ namespace BossGatedPortals
                     Hint = e.Hint.Value.Trim(),
                     UnlockMessage = e.UnlockMessage.Value.Trim(),
                     AllowEverything = e.AllowEverything != null && e.AllowEverything.Value,
+                    MaxPortals = e.MaxPortals.Value,
                 });
             }
             NeverTeleportItems = SplitList(NeverTeleport.Value);
@@ -358,7 +389,8 @@ namespace BossGatedPortals
             {
                 $"Settings: Enabled={Enabled.Value}, UnlockWhen={UnlockWhen.Value}, Cumulative={CumulativeTiers.Value}, " +
                 $"LockListedItemsAlways={LockListedItemsAlways.Value}, AdminBypass={AdminBypass.Value}, " +
-                $"BringMount={BringMount.Value}, BringCart={BringCart.Value}, BringTames={BringTames.Value}",
+                $"BringMount={BringMount.Value}, BringCart={BringCart.Value}, BringTames={BringTames.Value}, " +
+                $"PortalLimit={PortalLimitEnabled.Value} (start {PortalLimitStart.Value}, admins exempt {PortalLimitAdminsExempt.Value})",
                 "NeverTeleport: " + Describe(NeverTeleportItems),
                 "Tiers:",
             };
@@ -367,7 +399,8 @@ namespace BossGatedPortals
                 string token = t.BossItemToken != null ? $" ({t.BossItemToken})" : "";
                 string items = t.AllowEverything ? "EVERYTHING" + (t.Items.Count > 0 ? " + " + Describe(t.Items) : "")
                                                  : Describe(t.Items);
-                lines.Add($"  T{t.Index} {t.Name,-12} key={t.GlobalKey}  bossItem={t.BossItem}{token}  items={items}");
+                lines.Add($"  T{t.Index} {t.Name,-12} key={t.GlobalKey}  bossItem={t.BossItem}{token}  " +
+                    $"maxPortals={t.MaxPortals}  items={items}");
             }
             Jotunn.Logger.LogInfo(string.Join("\n", lines));
         }

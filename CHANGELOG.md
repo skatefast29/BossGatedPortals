@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0
+
+- **New: portal limit** (`9 - Portal Limit`, off by default). Caps how many portals the whole world can hold,
+  raised each time a boss is killed (each tier's new `MaxPortals`). Existing portals are never removed.
+  Admins can be made exempt with `PortalLimitAdminsExempt`.
+- New minor version: the server and every player need 1.2.x.
+
 ## 1.1.1
 
 - **TargetPortal fix:** on TargetPortal's portal map, a portal icon with another map pin on or next to it

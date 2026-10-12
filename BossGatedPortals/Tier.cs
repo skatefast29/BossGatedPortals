@@ -14,5 +14,6 @@ namespace BossGatedPortals
         public string Hint;
         public string UnlockMessage;
         public bool AllowEverything;
+        public int MaxPortals;           // world portal limit once this boss is killed; -1 = none (PortalLimit)
     }
 }

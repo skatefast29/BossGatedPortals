@@ -51,7 +51,15 @@ These change nothing until you switch them on in F1.
   built-in delay. Real loading is never skipped.
 - Steps aside automatically while QuickTeleport, FastTeleport or Proper Portals is installed.
 
-Server and clients need the same major.minor version (e.g. any 1.1.x).
+**Portal limit** (`9 - Portal Limit`; off)
+- Caps how many portals the whole world can hold (everyone's together). Each boss killed raises the cap,
+  so early on you travel on foot and by boat, and portals spread as the world opens up.
+- Defaults: 2 before any boss, then 4, 6, 8, 10, 12, 16, 20, and no limit after the final boss. Each tier's
+  number is its own `MaxPortals` setting.
+- Existing portals are never removed; a world over the limit just can't build more until the cap rises.
+- `PortalLimitAdminsExempt` lets admins build past it.
+
+Server and clients need the same major.minor version (e.g. any 1.2.x).
 
 ## Installation
 
@@ -89,6 +97,7 @@ Per-tier settings:
 | `Hint` | Shown when blocked |
 | `UnlockMessage` | Announced on first kill |
 | `AllowEverything` | T7 only: unlock all blocked items |
+| `MaxPortals` | Portals the world can hold once this boss is killed, when the portal limit is on. -1 = no limit |
 
 ## Settings
 
@@ -126,6 +135,10 @@ All admin-only and server-synced, except **8 - Client**, which each player sets 
 | | `LogItemChecks` | `true` | Log unknown item names, items in two tiers, and blocked items no tier lists |
 | 8 - Client | `HintPosition` | `Centered` | `Centered` or `TopLeft` |
 | | `HintCooldownSeconds` | `5` | Seconds between hints (0–60) |
+| 9 - Portal Limit | `PortalLimitEnabled` | `false` | Limit portals in the whole world, raised by each tier's `MaxPortals`. The settings below only apply while this is on |
+| | ↳ `PortalLimitStart` | `2` | Portals allowed before any boss is killed. 0 = none |
+| | ↳ `PortalLimitAdminsExempt` | `false` | Admins can build past the limit |
+| | ↳ `PortalLimitMessage` | `This world holds {count} of {limit} portals. …` | Shown when a portal can't be built |
 
 ## Compatibility
 
@@ -180,6 +193,8 @@ and LoxSaddleBags 2.0.2. The other mods below were checked by reading their code
 - Mounts, carts and tames travel through vanilla, XPortal and TargetPortal portals, not with other
   map-teleport mods (Unified Target Portal, PotalMap and the like). A cart you're pulling is still checked
   there (`GateCompanionCargo`).
+- The portal count reaches players every 2 seconds, so two players building portals at the very same
+  moment can go one over the limit.
 - After Valheim updates, check the log for `LogItemChecks` warnings.
 
 ## Source and bug reports

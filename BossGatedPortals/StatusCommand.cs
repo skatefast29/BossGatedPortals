@@ -52,8 +52,13 @@ namespace BossGatedPortals
                 bool held = !string.IsNullOrEmpty(t.BossItemToken) && player.IsMaterialKnown(t.BossItemToken);
                 bool unlocked = Gate.IsTierUnlocked(player, t);
                 context.AddString($"T{t.Index} {t.Name}: world {(worldKey ? "UNLOCKED" : "locked")} ({t.GlobalKey}), " +
-                    $"you {(held ? "have" : "have not")} held {t.BossItem} -> {(unlocked ? "UNLOCKED" : "LOCKED")} for you");
+                    $"you {(held ? "have" : "have not")} held {t.BossItem} -> {(unlocked ? "UNLOCKED" : "LOCKED")} for you" +
+                    $" (MaxPortals {t.MaxPortals})");
             }
+
+            int limit = PortalLimit.Limit(), count = PortalLimit.Count();
+            context.AddString($"Portal limit {(Settings.PortalLimitEnabled.Value ? "ON" : "off")}: " +
+                $"{(count < 0 ? "?" : count.ToString())} portals in the world, limit {(limit < 0 ? "none" : limit.ToString())}");
         }
     }
 }

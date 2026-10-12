@@ -2,7 +2,7 @@
   "name": "BossGatedPortals",
   "version_number": "1.2.0",
   "website_url": "https://github.com/skatefast29/BossGatedPortals",
-  "description": "Portal progression: ores and metals teleport once their biome's boss is beaten. Optional extras, off by default: mounts, carts and tames that travel with you, and faster portals. Server-synced. Works with XPortal and TargetPortal.",
+  "description": "Portal progression: ores and metals teleport once their biome's boss is beaten, and new worlds get a portal limit that grows with each boss. Optional: mounts, carts and tames travel with you; faster portals. Works with XPortal and TargetPortal.",
   "dependencies": [
     "denikson-BepInExPack_Valheim-5.4.2351",
     "ValheimModding-Jotunn-2.30.2"

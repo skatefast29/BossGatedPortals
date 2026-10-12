@@ -2,10 +2,15 @@
 
 ## 1.2.0
 
-- **New: portal limit** (`9 - Portal Limit`, off by default). Caps how many portals the whole world can hold,
-  raised each time a boss is killed (each tier's new `MaxPortals`). Existing portals are never removed.
-  Admins can be made exempt with `PortalLimitAdminsExempt`. With `PortalLimitLockWhenOver`, no portal works
-  while the world is over its limit, until enough are destroyed.
+- **New main feature: portal limit** (`9 - Portal Limit`). Caps how many portals the whole world can hold:
+  2 at the start, raised each time a boss is killed (each tier's new `MaxPortals`: 4, 6, 8, 10, 12, 16, 20,
+  then no limit). Fewer portals early means more travel and exploration.
+- **On for new worlds only.** The first time the server loads a world with this version, a world without
+  portals gets the limit and a world that already has portals is left alone, so updating never locks anyone's
+  portals. Admins can switch a world with `portalgate limit on` / `off`; `portalgate status` shows it.
+- Building a portal over the limit is refused before materials are used. With `PortalLimitLockWhenOver` (on),
+  no portal works while the world is over its limit, until enough are destroyed. Portals are never removed.
+- `PortalLimitAdminsExempt` (off) lets admins build past the limit.
 - New minor version: the server and every player need 1.2.x.
 
 ## 1.1.1

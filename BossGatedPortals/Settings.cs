@@ -291,10 +291,12 @@ namespace BossGatedPortals
 
             const string limit = "9 - Portal Limit";
             const string limitOnly = "Only used when PortalLimitEnabled is on. ";
-            PortalLimitEnabled = Admin(limit, "PortalLimitEnabled", false,
+            PortalLimitEnabled = Admin(limit, "PortalLimitEnabled", true,
                 "Limit how many portals the whole world can hold (everyone's together), raised as bosses are killed. " +
-                "Each tier's MaxPortals sets the limit once that tier's boss is dead. Portals that already exist are " +
-                "never removed; a world over the limit just can't build more. Every kind of portal counts.");
+                "Each tier's MaxPortals sets the limit once that tier's boss is dead. Every kind of portal counts. " +
+                "Only for new worlds: the first time the server loads a world with this on, a world that already has " +
+                "portals is left without a limit (so updating never locks anyone's portals). Admins can switch one " +
+                "world with the console command 'portalgate limit on' or 'off'. Portals are never removed.");
             PortalLimitStart = Admin(limit, "PortalLimitStart", 2,
                 limitOnly + "Portals the world can hold before any tier's boss is killed. 0 = none.",
                 new AcceptableValueRange<int>(0, 1000));

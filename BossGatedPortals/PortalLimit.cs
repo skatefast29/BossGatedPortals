@@ -11,11 +11,21 @@ namespace BossGatedPortals
     /// [9 - Portal Limit]: how many portals the whole world may hold, raised as bosses fall.
     /// Only the server knows every portal (a client only loads the ones near it), so the server counts
     /// them and sends the count to everyone every few seconds. Never touches portal pairing.
+    /// Each world remembers whether the limit applies to it (world key "bgp_portallimit on/off"), decided by the
+    /// server the first time it loads the world with the limit switched on: worlds that already have portals are
+    /// left alone, so updating the mod never locks portals people use. Admins switch it with "portalgate limit".
     /// </summary>
     internal static class PortalLimit
     {
         private const string CountRpc = "BossGatedPortals_PortalCount";
         private const float CountSeconds = 2f;
+        /// <summary>World key holding this world's choice: "bgp_portallimit on" or "bgp_portallimit off".</summary>
+        public const string WorldKey = "bgp_portallimit";
+        // Wait this long after the world starts before deciding, so it's fully loaded.
+        private const float DecideAfterSeconds = 3f;
+        private static float gameStartTime = float.PositiveInfinity;
+        // Decided this session: once only, even if another mod blocks world keys (no retrying every tick).
+        private static bool decided;
 
         // The count as the server last sent it (-1 = not heard yet). Unused on the server itself.
         private static int knownCount = -1;
@@ -28,7 +38,7 @@ namespace BossGatedPortals
         public static bool CanBuildPortal(out string message)
         {
             message = null;
-            if (!Settings.Enabled.Value || !Settings.PortalLimitEnabled.Value) return true;
+            if (!Active()) return true;
             if (Settings.PortalLimitAdminsExempt.Value && SynchronizationManager.Instance.PlayerIsAdmin) return true;
 
             int limit = Limit();
@@ -55,8 +65,7 @@ namespace BossGatedPortals
         public static bool PortalsUsable(out string message)
         {
             message = null;
-            if (!Settings.Enabled.Value || !Settings.PortalLimitEnabled.Value || !Settings.PortalLimitLockWhenOver.Value)
-                return true;
+            if (!Settings.PortalLimitLockWhenOver.Value || !Active()) return true;
 
             int limit = Limit();
             int count = Count();
@@ -68,11 +77,36 @@ namespace BossGatedPortals
             return false;
         }
 
+        /// <summary>The limit is switched on in the config and applies to this world (see WorldKey).</summary>
+        public static bool Active() =>
+            Settings.Enabled.Value && Settings.PortalLimitEnabled.Value && WorldChoice() == true;
+
+        /// <summary>This world's choice: true = limited, false = left alone, null = not decided yet.</summary>
+        public static bool? WorldChoice()
+        {
+            if (ZoneSystem.instance == null || !ZoneSystem.instance.GetGlobalKey(WorldKey, out string value)) return null;
+            return value == "on";
+        }
+
+        /// <summary>Sets this world's choice (admin command; any client can ask the server, like "setkey").</summary>
+        public static void SetWorldChoice(bool on) => ZoneSystem.instance.SetGlobalKey(WorldKey + (on ? " on" : " off"));
+
+        private static int limitFrame = -1, frameLimit;
+
         /// <summary>
         /// The world's portal limit, or -1 for no limit: StartLimit, raised by each tier whose boss has been
         /// killed on this world. Always the world key, whatever UnlockWhen says (one limit for everyone).
         /// </summary>
         public static int Limit()
+        {
+            // Portals ask every frame (their glow), and each world-key lookup copies the key's name: once per frame.
+            if (limitFrame == Time.frameCount) return frameLimit;
+            limitFrame = Time.frameCount;
+            frameLimit = LimitNow();
+            return frameLimit;
+        }
+
+        private static int LimitNow()
         {
             int limit = Settings.PortalLimitStart.Value;
             foreach (Tier t in Settings.Tiers)
@@ -101,22 +135,43 @@ namespace BossGatedPortals
             if (knownCount >= 0) knownCount++;
         }
 
-        /// <summary>Every frame from the plugin: the server sends the count to everyone every few seconds.</summary>
+        /// <summary>
+        /// Every frame from the plugin, on the server only: decides a new world's choice once it has loaded, then
+        /// sends the portal count to everyone every few seconds while the limit applies.
+        /// </summary>
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void Tick()
         {
             if (Time.time < nextCount) return;
             nextCount = Time.time + CountSeconds;
             if (!Settings.Enabled.Value || !Settings.PortalLimitEnabled.Value) return;
-            if (!ZNet.instance || !ZNet.instance.IsServer() || ZRoutedRpc.instance == null || ZDOMan.instance == null)
+            if (!ZNet.instance || !ZNet.instance.IsServer() || ZRoutedRpc.instance == null || ZDOMan.instance == null ||
+                ZoneSystem.instance == null || Time.time < gameStartTime + DecideAfterSeconds)
                 return;
-            ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, CountRpc, CountNow());
+
+            int count = CountNow();
+            if (WorldChoice() == null)
+            {
+                if (decided) return;
+                decided = true;
+                // First time this world runs with the limit on: only a world without portals gets it.
+                bool on = count == 0;
+                SetWorldChoice(on);
+                Jotunn.Logger.LogInfo(on
+                    ? "Portal limit: this world has no portals yet, so the limit applies here."
+                    : $"Portal limit: this world already has {count} portals, so the limit is left off here. " +
+                      "An admin can turn it on with 'portalgate limit on'.");
+                return;
+            }
+            if (Active()) ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, CountRpc, count);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void Register()
         {
             knownCount = -1;
+            decided = false;
+            gameStartTime = Time.time;
             ZRoutedRpc.instance.Register<int>(CountRpc, (sender, count) => knownCount = count);
         }
 

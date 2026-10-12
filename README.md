@@ -1,11 +1,15 @@
 # BossGatedPortals Plus
 
-A progression mod for Valheim portals: ores and metals can go through a portal once that biome's boss is
-beaten. Each boss unlocks its own biome's goods, so portals open up as your world progresses instead of
-never letting metal through.
+A progression mod for Valheim portals, built on two ideas:
 
-That's all it does out of the box. The **optional extras** further down (companions that travel with
-you, faster portals) are **off by default**.
+- **Ores and metals** can go through a portal once that biome's boss is beaten. Each boss unlocks its own
+  biome's goods, so portals open up as your world progresses instead of never letting metal through.
+- **A portal limit** for the whole world that grows with each boss killed (2 portals at the start, more after
+  every boss, no limit after the last one). Fewer portals early on means more travel and exploration. It's on
+  for **new worlds**; a world that already has portals when you install or update is left alone.
+
+The **optional extras** further down (companions that travel with you, faster portals) are **off by
+default**.
 
 Works with the portal mods **XPortal** and **TargetPortal**: the progression rules apply through their
 portals, and the optional companion travel works with both (see [Compatibility](#compatibility)).
@@ -29,8 +33,26 @@ Source: [github.com/skatefast29/BossGatedPortals](https://github.com/skatefast29
 - **Portals only glow** when you can actually go through, and **tooltips and inventory icons** show what you
   can teleport right now.
 - **Unlock announcements** to everyone on a boss's first kill.
+- **Portal limit** (`9 - Portal Limit`): see below.
 - **For admins:** `portalgate status` console command, optional `AdminBypass`, and startup checks that log
   item typos, duplicate items, unlisted blocked items and conflicting mods.
+
+## Portal limit (on for new worlds)
+
+- Caps how many portals the whole world can hold (everyone's together). Each boss killed raises the cap,
+  so early on you travel on foot and by boat, and portals spread as the world opens up.
+- Defaults: 2 before any boss, then 4, 6, 8, 10, 12, 16, 20, and no limit after the final boss. Each tier's
+  number is its own `MaxPortals` setting.
+- **Only new worlds get it.** The first time the server loads a world with the limit on, it checks for
+  portals: a world without any gets the limit, a world that already has portals is left without one, so
+  installing or updating never locks anyone's portals. The world remembers this. Admins can switch one world
+  with the console command `portalgate limit on` or `portalgate limit off`, and `portalgate status` shows it.
+- Building a portal over the limit is refused, with a message, before any materials are used.
+- `PortalLimitLockWhenOver` (on): while the world has more portals than its limit, no portal works until
+  enough are destroyed, so building two at the same moment to sneak one past the limit doesn't pay off.
+  Portals already built are never removed by the mod.
+- `PortalLimitAdminsExempt` (off) lets admins build past the limit (their portals still count).
+- Works with vanilla portals, **XPortal** and **TargetPortal**. Every kind of portal counts.
 
 ## Optional extras (off by default)
 
@@ -51,23 +73,13 @@ These change nothing until you switch them on in F1.
   built-in delay. Real loading is never skipped.
 - Steps aside automatically while QuickTeleport, FastTeleport or Proper Portals is installed.
 
-**Portal limit** (`9 - Portal Limit`; off)
-- Caps how many portals the whole world can hold (everyone's together). Each boss killed raises the cap,
-  so early on you travel on foot and by boat, and portals spread as the world opens up.
-- Defaults: 2 before any boss, then 4, 6, 8, 10, 12, 16, 20, and no limit after the final boss. Each tier's
-  number is its own `MaxPortals` setting.
-- Existing portals are never removed; a world over the limit just can't build more until the cap rises.
-- `PortalLimitAdminsExempt` lets admins build past it.
-- `PortalLimitLockWhenOver` (on): while the world has more portals than its limit, no portal works until
-  enough are destroyed, so building two at the same moment to sneak one past the limit doesn't pay off.
-
 Server and clients need the same major.minor version (e.g. any 1.2.x).
 
 ## Installation
 
 **Requires:** BepInExPack_Valheim, Jotunn.
 
-- Install on the server and every client (same major.minor version, e.g. any 1.1.x; the newest is recommended).
+- Install on the server and every client (same major.minor version, e.g. any 1.2.x; the newest is recommended).
 - **Gale / r2modman:** install or update *BossGatedPortals* as usual, or *Import → local mod* and pick the zip.
 - **Manual:** copy `BossGatedPortals.dll` to `BepInEx/plugins/BossGatedPortals/`.
 
@@ -133,11 +145,11 @@ All admin-only and server-synced, except **8 - Client**, which each player sets 
 | 6 - Compatibility | `GateCompanionCargo` | `true` | Gate cart cargo and tame saddlebags when another mod brings them along |
 | | `WarnOnConflictingMods` | `true` | Warn about conflicting mods and settings |
 | 7 - Admin | `AdminBypass` | `false` | Admins ignore the gate |
-| | `StatusCommand` | `true` | Enable `portalgate status` |
+| | `StatusCommand` | `true` | Enable `portalgate status` (`portalgate limit on/off` always works for admins) |
 | | `LogItemChecks` | `true` | Log unknown item names, items in two tiers, and blocked items no tier lists |
 | 8 - Client | `HintPosition` | `Centered` | `Centered` or `TopLeft` |
 | | `HintCooldownSeconds` | `5` | Seconds between hints (0–60) |
-| 9 - Portal Limit | `PortalLimitEnabled` | `false` | Limit portals in the whole world, raised by each tier's `MaxPortals`. The settings below only apply while this is on |
+| 9 - Portal Limit | `PortalLimitEnabled` | `true` | Limit portals in the whole world, raised by each tier's `MaxPortals`. New worlds only: a world that already has portals is left alone (`portalgate limit on/off` switches one world). The settings below only apply while this is on |
 | | ↳ `PortalLimitStart` | `2` | Portals allowed before any boss is killed. 0 = none |
 | | ↳ `PortalLimitAdminsExempt` | `false` | Admins can build past the limit |
 | | ↳ `PortalLimitMessage` | `This world holds {count} of {limit} portals. …` | Shown when a portal can't be built |
@@ -199,6 +211,8 @@ and LoxSaddleBags 2.0.2. The other mods below were checked by reading their code
   there (`GateCompanionCargo`).
 - The portal count reaches players every 2 seconds, so two players building portals at the very same
   moment can go one over the limit (`PortalLimitLockWhenOver` makes that pointless).
+- Each world remembers its portal-limit choice as a world key (`bgp_portallimit on/off`). A mod that blocks
+  world keys (e.g. Server Devcommands' `DisableGlobalKeys`) can stop that, and then the limit stays off.
 - After Valheim updates, check the log for `LogItemChecks` warnings.
 
 ## Source and bug reports

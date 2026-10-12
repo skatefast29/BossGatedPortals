@@ -8,30 +8,35 @@ namespace BossGatedPortals
     /// Admin console command "portalgate status": each tier's world key, whether the calling player
     /// has held the boss drop, and whether the tier is unlocked for them. Shows world keys and boss
     /// items (effectively boss names), so it's refused for non-admins.
+    /// "portalgate limit on|off": whether the portal limit applies to this world (see PortalLimit.WorldKey).
     /// </summary>
     internal class StatusCommand : ConsoleCommand
     {
         public override string Name => "portalgate";
 
-        public override string Help => "portalgate status - BossGatedPortals tiers for the world and for you (admin only)";
+        public override string Help => "portalgate status - BossGatedPortals tiers for the world and for you; " +
+            "portalgate limit on|off - whether the portal limit applies to this world (admin only)";
 
-        public override List<string> CommandOptionList() => new List<string> { "status" };
+        public override List<string> CommandOptionList() => new List<string> { "status", "limit" };
 
         public override void Run(string[] args, Terminal context)
         {
-            if (args.Length == 0 || args[0].ToLowerInvariant() != "status")
+            string sub = args.Length > 0 ? args[0].ToLowerInvariant() : "";
+            string choice = args.Length > 1 ? args[1].ToLowerInvariant() : "";
+            bool setLimit = sub == "limit" && (choice == "on" || choice == "off");
+            if (sub != "status" && !setLimit)
             {
-                context.AddString("Usage: portalgate status");
+                context.AddString("Usage: portalgate status | portalgate limit on|off");
                 return;
             }
-            if (!Settings.StatusCommand.Value)
+            if (!setLimit && !Settings.StatusCommand.Value)
             {
                 context.AddString("portalgate status is turned off (StatusCommand).");
                 return;
             }
             if (!SynchronizationManager.Instance.PlayerIsAdmin)
             {
-                context.AddString("portalgate status is for server admins only.");
+                context.AddString("portalgate is for server admins only.");
                 return;
             }
 
@@ -39,6 +44,14 @@ namespace BossGatedPortals
             if (player == null || ZoneSystem.instance == null)
             {
                 context.AddString("Join a world first.");
+                return;
+            }
+
+            if (setLimit)
+            {
+                PortalLimit.SetWorldChoice(choice == "on");
+                context.AddString($"Portal limit for this world set to {choice}." +
+                    (Settings.PortalLimitEnabled.Value ? "" : " (PortalLimitEnabled is off in the config, so nothing is limited.)"));
                 return;
             }
 
@@ -57,7 +70,10 @@ namespace BossGatedPortals
             }
 
             int limit = PortalLimit.Limit(), count = PortalLimit.Count();
-            context.AddString($"Portal limit {(Settings.PortalLimitEnabled.Value ? "ON" : "off")}: " +
+            bool? world = PortalLimit.WorldChoice();
+            context.AddString($"Portal limit {(Settings.PortalLimitEnabled.Value ? "ON" : "off")} in the config, " +
+                $"{(world == null ? "not decided yet" : world == true ? "ON" : "off")} for this world " +
+                $"('portalgate limit on|off'): " +
                 $"{(count < 0 ? "?" : count.ToString())} portals in the world, limit {(limit < 0 ? "none" : limit.ToString())}");
         }
     }

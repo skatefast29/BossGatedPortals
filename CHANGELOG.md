@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.1
+
+- **TargetPortal fix:** on TargetPortal's portal map, a portal icon with another map pin on or next to it
+  can now be clicked (before, the click hit the other pin and nothing happened). Portal icons are also drawn
+  on top of other pins while that map is open.
+- Bug fix only: 1.1.0 and 1.1.1 players and servers work together.
+
 ## 1.1.0
 
 - **Added TargetPortal support.** Mounts, carts and tames now come along when you pick a portal on

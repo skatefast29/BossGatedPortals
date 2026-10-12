@@ -27,7 +27,7 @@ namespace BossGatedPortals
         public const string PluginName = "BossGatedPortals Plus";
         // The ID before 1.0.0: its config file is carried over once (see CarryOverOldConfigFile).
         private const string OldGUID = "com.jtmill01.bossgatedportals";
-        public const string PluginVersion = "1.1.0";
+        public const string PluginVersion = "1.1.1";
 
         public const string XPortalGUID = "yay.spikehimself.xportal";
 

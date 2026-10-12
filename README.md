@@ -131,7 +131,8 @@ All admin-only and server-synced, except **8 - Client**, which each player sets 
 
 **Supported portal mods:** **XPortal** and **TargetPortal** (tested in game with XPortal 1.2.25 and
 TargetPortal 1.2.7). The progression rules, hints and the companion travel (`BringMount`, `BringCart`,
-`BringTames`) all work through their portals.
+`BringTames`) all work through their portals. On TargetPortal's portal map, its portal icons stay
+clickable and on top even when another map pin sits on them.
 
 Also tested in game alongside AdventureBackpacks 2.2.5, Backpacks 1.3.10, OdinHorse 1.7.5
 and LoxSaddleBags 2.0.2. The other mods below were checked by reading their code:

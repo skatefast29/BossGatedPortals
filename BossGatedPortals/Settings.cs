@@ -74,6 +74,8 @@ namespace BossGatedPortals
         public static ConfigEntry<int> PortalLimitStart;
         public static ConfigEntry<bool> PortalLimitAdminsExempt;
         public static ConfigEntry<string> PortalLimitMessage;
+        public static ConfigEntry<bool> PortalLimitLockWhenOver;
+        public static ConfigEntry<string> PortalLimitOverMessage;
 
         /// <summary>Parsed tiers, in order T0..T7. Rebuilt whenever a setting changes.</summary>
         public static List<Tier> Tiers = new List<Tier>();
@@ -302,6 +304,14 @@ namespace BossGatedPortals
                 "This world holds {count} of {limit} portals. A greater foe must fall before more can be built.",
                 limitOnly + "Shown when a portal can't be built. {count} = portals in the world, {limit} = the limit. " +
                 "Never name a boss.");
+            PortalLimitLockWhenOver = Admin(limit, "PortalLimitLockWhenOver", true,
+                limitOnly + "If true, while the world holds MORE portals than its limit, no portal works for anyone until " +
+                "enough are destroyed. Stops players squeezing in an extra portal by building two at the same moment. " +
+                "Careful: turning the limit on (or lowering it) in a world that's already over it locks every portal, " +
+                "and so does an admin building past the limit with PortalLimitAdminsExempt.");
+            PortalLimitOverMessage = Admin(limit, "PortalLimitOverMessage",
+                "This world has too many portals ({count} of {limit}). Destroy one before any portal will work.",
+                limitOnly + "Shown at a portal while PortalLimitLockWhenOver locks it. {count}, {limit}. Never name a boss.");
 
             for (int i = 0; i < TierDefaults.Length; i++)
             {
@@ -390,7 +400,8 @@ namespace BossGatedPortals
                 $"Settings: Enabled={Enabled.Value}, UnlockWhen={UnlockWhen.Value}, Cumulative={CumulativeTiers.Value}, " +
                 $"LockListedItemsAlways={LockListedItemsAlways.Value}, AdminBypass={AdminBypass.Value}, " +
                 $"BringMount={BringMount.Value}, BringCart={BringCart.Value}, BringTames={BringTames.Value}, " +
-                $"PortalLimit={PortalLimitEnabled.Value} (start {PortalLimitStart.Value}, admins exempt {PortalLimitAdminsExempt.Value})",
+                $"PortalLimit={PortalLimitEnabled.Value} (start {PortalLimitStart.Value}, admins exempt {PortalLimitAdminsExempt.Value}, " +
+                $"lock when over {PortalLimitLockWhenOver.Value})",
                 "NeverTeleport: " + Describe(NeverTeleportItems),
                 "Tiers:",
             };

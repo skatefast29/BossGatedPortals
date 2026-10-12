@@ -24,6 +24,9 @@ namespace BossGatedPortals
         /// <summary>Items that failed Gate.CanTeleport in the last local-inventory portal check.</summary>
         public static readonly List<Blocked> LastBlocked = new List<Blocked>();
 
+        /// <summary>Set when the last portal check failed because the world has too many portals (PortalLimit).</summary>
+        public static string PortalLocked;
+
         /// <summary>The 0.2.x default, upgraded to the one with {where} if never changed (Settings.Migrate).</summary>
         public const string OldDefaultFormat = "An item blocks the portal. {hint}";
         public const string DefaultFormat = "An item{where} blocks the portal. {hint}";
@@ -120,11 +123,11 @@ namespace BossGatedPortals
             [MethodImpl(MethodImplOptions.NoInlining)]
             private static bool SwapForHint(Player player, ref MessageHud.MessageType type, ref string msg)
             {
-                if (msg != "$msg_noteleport" || player != Player.m_localPlayer ||
-                    !Settings.Enabled.Value || string.IsNullOrEmpty(Settings.HintFormat.Value))
+                if (msg != "$msg_noteleport" || player != Player.m_localPlayer || !Settings.Enabled.Value ||
+                    (PortalLocked == null && string.IsNullOrEmpty(Settings.HintFormat.Value)))
                     return true;
 
-                string hint = BuildMessage();
+                string hint = PortalLocked ?? BuildMessage();
                 if (hint == null) return true; // nothing a tier can unlock: vanilla message
 
                 if (Time.time - lastHintTime < Settings.HintCooldownSeconds.Value)

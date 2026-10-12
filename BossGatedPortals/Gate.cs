@@ -277,6 +277,14 @@ namespace BossGatedPortals
                 return; // someone else's inventory: vanilla's answer stands
 
             Hints.LastBlocked.Clear();
+            Hints.PortalLocked = null;
+            if (own && !PortalLimit.PortalsUsable(out string locked))
+            {
+                // Too many portals in the world: no portal works, whatever is carried.
+                Hints.PortalLocked = locked;
+                result = false;
+                return;
+            }
             AddBlocked(player, inventory, allowAllItems, own ? "" : " in your " + cartVagon.GetHoverName());
             if (own && cart != null)
                 AddBlocked(player, cart, allowAllItems, " in your " + cartVagon.GetHoverName());

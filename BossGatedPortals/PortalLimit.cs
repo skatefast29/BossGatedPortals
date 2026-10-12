@@ -48,6 +48,27 @@ namespace BossGatedPortals
         }
 
         /// <summary>
+        /// PortalLimitLockWhenOver: while the world holds more portals than its limit, no portal works for
+        /// anyone until enough are destroyed. Returns false and fills `message` then. An unknown count (just
+        /// joined) doesn't lock.
+        /// </summary>
+        public static bool PortalsUsable(out string message)
+        {
+            message = null;
+            if (!Settings.Enabled.Value || !Settings.PortalLimitEnabled.Value || !Settings.PortalLimitLockWhenOver.Value)
+                return true;
+
+            int limit = Limit();
+            int count = Count();
+            if (limit < 0 || count <= limit) return true;
+
+            message = Settings.PortalLimitOverMessage.Value
+                .Replace("{count}", count.ToString())
+                .Replace("{limit}", limit.ToString());
+            return false;
+        }
+
+        /// <summary>
         /// The world's portal limit, or -1 for no limit: StartLimit, raised by each tier whose boss has been
         /// killed on this world. Always the world key, whatever UnlockWhen says (one limit for everyone).
         /// </summary>

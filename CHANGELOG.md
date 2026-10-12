@@ -4,7 +4,8 @@
 
 - **New: portal limit** (`9 - Portal Limit`, off by default). Caps how many portals the whole world can hold,
   raised each time a boss is killed (each tier's new `MaxPortals`). Existing portals are never removed.
-  Admins can be made exempt with `PortalLimitAdminsExempt`.
+  Admins can be made exempt with `PortalLimitAdminsExempt`. With `PortalLimitLockWhenOver`, no portal works
+  while the world is over its limit, until enough are destroyed.
 - New minor version: the server and every player need 1.2.x.
 
 ## 1.1.1

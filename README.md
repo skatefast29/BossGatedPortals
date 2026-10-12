@@ -58,6 +58,8 @@ These change nothing until you switch them on in F1.
   number is its own `MaxPortals` setting.
 - Existing portals are never removed; a world over the limit just can't build more until the cap rises.
 - `PortalLimitAdminsExempt` lets admins build past it.
+- `PortalLimitLockWhenOver` (on): while the world has more portals than its limit, no portal works until
+  enough are destroyed, so building two at the same moment to sneak one past the limit doesn't pay off.
 
 Server and clients need the same major.minor version (e.g. any 1.2.x).
 
@@ -139,6 +141,8 @@ All admin-only and server-synced, except **8 - Client**, which each player sets 
 | | ↳ `PortalLimitStart` | `2` | Portals allowed before any boss is killed. 0 = none |
 | | ↳ `PortalLimitAdminsExempt` | `false` | Admins can build past the limit |
 | | ↳ `PortalLimitMessage` | `This world holds {count} of {limit} portals. …` | Shown when a portal can't be built |
+| | ↳ `PortalLimitLockWhenOver` | `true` | While the world is over its limit, no portal works until enough are destroyed |
+| | ↳ `PortalLimitOverMessage` | `This world has too many portals ({count} of {limit}). …` | Shown at a locked portal |
 
 ## Compatibility
 
@@ -194,7 +198,7 @@ and LoxSaddleBags 2.0.2. The other mods below were checked by reading their code
   map-teleport mods (Unified Target Portal, PotalMap and the like). A cart you're pulling is still checked
   there (`GateCompanionCargo`).
 - The portal count reaches players every 2 seconds, so two players building portals at the very same
-  moment can go one over the limit.
+  moment can go one over the limit (`PortalLimitLockWhenOver` makes that pointless).
 - After Valheim updates, check the log for `LogItemChecks` warnings.
 
 ## Source and bug reports

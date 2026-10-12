@@ -197,8 +197,9 @@ namespace BossGatedPortals
                 "Vanilla blocks tool-tier 1000+ items at every portal. The only such item is FrozenKingDrop. " +
                 "If true, the final tier also unlocks those.");
             RespectVanillaAllowAll = Admin(items, "RespectVanillaAllowAll", true,
-                "Never block a portal that already lets everything through in vanilla (the Stone Portal), " +
-                "and respect the 'Portals' world modifier when it allows all items.");
+                "Never block items at a portal that already lets everything through in vanilla (the Stone Portal), " +
+                "and respect the 'Portals' world modifier when it allows all items. (The portal limit's " +
+                "PortalLimitLockWhenOver still locks every portal while the world has too many.)");
 
             const string messages = "3 - Messages";
             HintFormat = Admin(messages, "HintFormat", Hints.DefaultFormat,

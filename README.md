@@ -34,7 +34,7 @@ Source: [github.com/skatefast29/BossGatedPortals](https://github.com/skatefast29
   can teleport right now.
 - **Unlock announcements** to everyone on a boss's first kill.
 - **Portal limit** (`9 - Portal Limit`): see below.
-- **For admins:** `portalgate status` console command, optional `AdminBypass`, and startup checks that log
+- **For admins:** `portalgate status` and `portalgate limit on/off` console commands, optional `AdminBypass`, and startup checks that log
   item typos, duplicate items, unlisted blocked items and conflicting mods.
 
 ## Portal limit (on for new worlds)
@@ -52,7 +52,9 @@ Source: [github.com/skatefast29/BossGatedPortals](https://github.com/skatefast29
   enough are destroyed, so building two at the same moment to sneak one past the limit doesn't pay off.
   Portals already built are never removed by the mod.
 - `PortalLimitAdminsExempt` (off) lets admins build past the limit (their portals still count).
-- Works with vanilla portals, **XPortal** and **TargetPortal**. Every kind of portal counts.
+- Works with vanilla portals, **XPortal** and **TargetPortal** (they use the game's own portals). Wood and
+  stone portals both count. Portal-like pieces from other mods (Waystones, Portal Stations and the like) only
+  count if that mod registers them as game portals.
 
 ## Optional extras (off by default)
 
@@ -126,7 +128,7 @@ All admin-only and server-synced, except **8 - Client**, which each player sets 
 | | `HildirChestsByTier` | `false` | Hildir's chests unlock with their biome's tier (Brass T1, Silver T3, Bronze T4) |
 | | `LockListedItemsAlways` | `false` | Also lock listed items the game (or another mod) already lets through, e.g. Coal in the Black Forest tier |
 | | `FinalTierIncludesCheatTier` | `false` | T7 also unlocks tool-tier 1000+ items |
-| | `RespectVanillaAllowAll` | `true` | Don't block Stone Portals or the allow-all *Portals* world modifier |
+| | `RespectVanillaAllowAll` | `true` | Don't block items at Stone Portals or under the allow-all *Portals* world modifier (the portal limit's lock still applies) |
 | 3 - Messages | `HintFormat` | `An item{where} blocks the portal. {hint}` | `{hint}`, `{where}` (e.g. " in your Cart", " in Lox's saddlebags") and `{item}`. Empty = the game's usual message |
 | | `AnnounceTierUnlock` | `true` | Announce first boss kills |
 | | `AccurateTooltips` | `true` | Per-player tooltips and icons |
@@ -160,7 +162,8 @@ All admin-only and server-synced, except **8 - Client**, which each player sets 
 
 **Supported portal mods:** **XPortal** and **TargetPortal** (tested in game with XPortal 1.2.25 and
 TargetPortal 1.2.7). The progression rules, hints and the companion travel (`BringMount`, `BringCart`,
-`BringTames`) all work through their portals. On TargetPortal's portal map, its portal icons stay
+`BringTames`) all work through their portals. The portal limit works with them too (checked by reading their
+code: their portals are the game's own, and they ask the same teleport check). On TargetPortal's portal map, its portal icons stay
 clickable and on top even when another map pin sits on them.
 
 Also tested in game alongside AdventureBackpacks 2.2.5, Backpacks 1.3.10, OdinHorse 1.7.5

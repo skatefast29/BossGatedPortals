@@ -278,7 +278,7 @@ namespace BossGatedPortals
 
             Hints.LastBlocked.Clear();
             Hints.PortalLocked = null;
-            if (own && !PortalLimit.PortalsUsable(out string locked))
+            if (own && !PortalLimit.PortalsUsable(allowAllItems, out string locked))
             {
                 // Too many portals in the world: no portal works, whatever is carried.
                 Hints.PortalLocked = locked;

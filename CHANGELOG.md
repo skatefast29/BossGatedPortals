@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.0
+
+- **New: `PortalLimitCountStonePortals`** (`9 - Portal Limit`, default `true`). `true` = Stone Portals follow the
+  portal limit like wood portals (as in 1.2.0). `false` = Stone Portals are left out of the limit: they don't
+  count, can always be built, and keep working while the world is over its limit.
+- The portal limit counts portals once per frame on a host or single-player game, instead of once per portal
+  glow (cheaper with many portals).
+- Clearer description for `RespectVanillaAllowAll`: it's about letting every item through Stone Portals.
+- README: clearer wording on Stone Portals, which portals the limit counts, and the `portalgate limit` command.
+- New minor version: the server and every player need 1.3.x.
+
 ## 1.2.0
 
 - **New main feature: portal limit** (`9 - Portal Limit`). Caps how many portals the whole world can hold:

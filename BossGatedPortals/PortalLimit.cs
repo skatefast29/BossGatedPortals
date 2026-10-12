@@ -60,12 +60,14 @@ namespace BossGatedPortals
         /// <summary>
         /// PortalLimitLockWhenOver: while the world holds more portals than its limit, no portal works for
         /// anyone until enough are destroyed. Returns false and fills `message` then. An unknown count (just
-        /// joined) doesn't lock.
+        /// joined) doesn't lock. portalAllowsAll = the portal lets every item through (the Stone Portal): with
+        /// PortalLimitCountStonePortals off those are outside the limit, so they keep working.
         /// </summary>
-        public static bool PortalsUsable(out string message)
+        public static bool PortalsUsable(bool portalAllowsAll, out string message)
         {
             message = null;
             if (!Settings.PortalLimitLockWhenOver.Value || !Active()) return true;
+            if (portalAllowsAll && !Settings.PortalLimitCountStonePortals.Value) return true;
 
             int limit = Limit();
             int count = Count();
@@ -119,14 +121,55 @@ namespace BossGatedPortals
         }
 
         /// <summary>Portals in the world: counted on the server, as last sent by it on a client (-1 = unknown).</summary>
-        public static int Count() => ZNet.instance && ZNet.instance.IsServer() ? CountNow() : knownCount;
+        public static int Count()
+        {
+            if (!ZNet.instance || !ZNet.instance.IsServer()) return knownCount;
+            // On the server/host, portals ask every frame (their glow): count once per frame.
+            if (countFrame != Time.frameCount)
+            {
+                countFrame = Time.frameCount;
+                frameCount = CountNow();
+            }
+            return frameCount;
+        }
+
+        private static int countFrame = -1, frameCount;
 
         private static int CountNow()
         {
+            bool countAll = Settings.PortalLimitCountStonePortals.Value;
             int count = 0;
             foreach (List<ZDO> sector in ZDOMan.instance.GetPortals().Values)
-                count += sector.Count;
+            {
+                if (countAll)
+                {
+                    count += sector.Count;
+                    continue;
+                }
+                foreach (ZDO zdo in sector)
+                {
+                    if (!AllowsAllItems(zdo.GetPrefab())) count++;
+                }
+            }
             return count;
+        }
+
+        // Portal prefab hash -> it lets every item through (the Stone Portal). Filled as portals are looked up.
+        private static readonly Dictionary<int, bool> allowsAll = new Dictionary<int, bool>();
+
+        /// <summary>
+        /// This portal prefab lets every item through, like the Stone Portal (its TeleportWorld.m_allowAllItems,
+        /// the same flag the item gate respects). Read from the prefab, so modded all-items portals count too.
+        /// </summary>
+        public static bool AllowsAllItems(int prefabHash)
+        {
+            if (allowsAll.TryGetValue(prefabHash, out bool all)) return all;
+            GameObject prefab = ZNetScene.instance ? ZNetScene.instance.GetPrefab(prefabHash) : null;
+            if (!prefab) return false; // unknown for now: counts, asked again later
+            TeleportWorld portal = prefab.GetComponentInChildren<TeleportWorld>(true);
+            all = portal && portal.m_allowAllItems;
+            allowsAll[prefabHash] = all;
+            return all;
         }
 
         /// <summary>A portal was just placed here: count it now, so a quick second one waits for the server.</summary>
@@ -227,7 +270,7 @@ namespace BossGatedPortals
             [MethodImpl(MethodImplOptions.NoInlining)]
             private static bool MayPlace(Player player, Piece piece)
             {
-                if (player != Player.m_localPlayer || !IsPortal(piece)) return true;
+                if (player != Player.m_localPlayer || !IsCountedPortal(piece)) return true;
                 if (CanBuildPortal(out string message)) return true;
                 player.Message(MessageHud.MessageType.Center, message);
                 return false;
@@ -236,11 +279,17 @@ namespace BossGatedPortals
             [MethodImpl(MethodImplOptions.NoInlining)]
             private static void Placed(Player player, Piece piece)
             {
-                if (player == Player.m_localPlayer && IsPortal(piece)) CountPlaced();
+                if (player == Player.m_localPlayer && IsCountedPortal(piece)) CountPlaced();
             }
 
-            private static bool IsPortal(Piece piece) =>
-                piece && Game.instance && Game.instance.PortalPrefabHash.Contains(piece.gameObject.name.GetStableHashCode());
+            /// <summary>A portal the limit counts: every portal, or with PortalLimitCountStonePortals off, not the Stone Portal.</summary>
+            private static bool IsCountedPortal(Piece piece)
+            {
+                if (!piece || !Game.instance) return false;
+                int hash = piece.gameObject.name.GetStableHashCode();
+                if (!Game.instance.PortalPrefabHash.Contains(hash)) return false;
+                return Settings.PortalLimitCountStonePortals.Value || !AllowsAllItems(hash);
+            }
         }
     }
 }

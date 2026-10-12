@@ -52,8 +52,11 @@ Source: [github.com/skatefast29/BossGatedPortals](https://github.com/skatefast29
   enough are destroyed, so building two at the same moment to sneak one past the limit doesn't pay off.
   Portals already built are never removed by the mod.
 - `PortalLimitAdminsExempt` (off) lets admins build past the limit (their portals still count).
-- Works with vanilla portals, **XPortal** and **TargetPortal** (they use the game's own portals). Wood and
-  stone portals both count. Portal-like pieces from other mods (Waystones, Portal Stations and the like) only
+- **Stone Portals** (`PortalLimitCountStonePortals`, on): by default they follow the same limit as wood
+  portals. Turn it off to leave Stone Portals out of the limit: they don't count, can always be built, and keep
+  working while the world is over its limit.
+- Works with vanilla portals, **XPortal** and **TargetPortal** (they use the game's own portals). Wood
+  portals always count; Stone Portals count unless `PortalLimitCountStonePortals` is off. Portal-like pieces from other mods (Waystones, Portal Stations and the like) only
   count if that mod registers them as game portals.
 
 ## Optional extras (off by default)
@@ -75,13 +78,13 @@ These change nothing until you switch them on in F1.
   built-in delay. Real loading is never skipped.
 - Steps aside automatically while QuickTeleport, FastTeleport or Proper Portals is installed.
 
-Server and clients need the same major.minor version (e.g. any 1.2.x).
+Server and clients need the same major.minor version (e.g. any 1.3.x).
 
 ## Installation
 
 **Requires:** BepInExPack_Valheim, Jotunn.
 
-- Install on the server and every client (same major.minor version, e.g. any 1.2.x; the newest is recommended).
+- Install on the server and every client (same major.minor version, e.g. any 1.3.x; the newest is recommended).
 - **Gale / r2modman:** install or update *BossGatedPortals* as usual, or *Import → local mod* and pick the zip.
 - **Manual:** copy `BossGatedPortals.dll` to `BepInEx/plugins/BossGatedPortals/`.
 
@@ -128,7 +131,7 @@ All admin-only and server-synced, except **8 - Client**, which each player sets 
 | | `HildirChestsByTier` | `false` | Hildir's chests unlock with their biome's tier (Brass T1, Silver T3, Bronze T4) |
 | | `LockListedItemsAlways` | `false` | Also lock listed items the game (or another mod) already lets through, e.g. Coal in the Black Forest tier |
 | | `FinalTierIncludesCheatTier` | `false` | T7 also unlocks tool-tier 1000+ items |
-| | `RespectVanillaAllowAll` | `true` | Don't block items at Stone Portals or under the allow-all *Portals* world modifier (the portal limit's lock still applies) |
+| | `RespectVanillaAllowAll` | `true` | **Stone Portals** carry every item, as in vanilla (also under the allow-all *Portals* world modifier). `false` = Stone Portals follow the tiers like wood portals. Only about items; see `PortalLimitCountStonePortals` for the portal limit |
 | 3 - Messages | `HintFormat` | `An item{where} blocks the portal. {hint}` | `{hint}`, `{where}` (e.g. " in your Cart", " in Lox's saddlebags") and `{item}`. Empty = the game's usual message |
 | | `AnnounceTierUnlock` | `true` | Announce first boss kills |
 | | `AccurateTooltips` | `true` | Per-player tooltips and icons |
@@ -157,6 +160,7 @@ All admin-only and server-synced, except **8 - Client**, which each player sets 
 | | ↳ `PortalLimitMessage` | `This world holds {count} of {limit} portals. …` | Shown when a portal can't be built |
 | | ↳ `PortalLimitLockWhenOver` | `true` | While the world is over its limit, no portal works until enough are destroyed |
 | | ↳ `PortalLimitOverMessage` | `This world has too many portals ({count} of {limit}). …` | Shown at a locked portal |
+| | ↳ `PortalLimitCountStonePortals` | `true` | Stone Portals follow the limit like wood ones. `false` = they don't count, can always be built, and keep working when the world is over its limit |
 
 ## Compatibility
 
@@ -216,6 +220,8 @@ and LoxSaddleBags 2.0.2. The other mods below were checked by reading their code
   moment can go one over the limit (`PortalLimitLockWhenOver` makes that pointless).
 - Each world remembers its portal-limit choice as a world key (`bgp_portallimit on/off`). A mod that blocks
   world keys (e.g. Server Devcommands' `DisableGlobalKeys`) can stop that, and then the limit stays off.
+- With `PortalLimitCountStonePortals` off, a Stone Portal still locks when you jump through it from
+  TargetPortal's map while the world is over its limit (the map can't tell which kind of portal you're at).
 - After Valheim updates, check the log for `LogItemChecks` warnings.
 
 ## Source and bug reports

@@ -76,6 +76,7 @@ namespace BossGatedPortals
         public static ConfigEntry<string> PortalLimitMessage;
         public static ConfigEntry<bool> PortalLimitLockWhenOver;
         public static ConfigEntry<string> PortalLimitOverMessage;
+        public static ConfigEntry<bool> PortalLimitCountStonePortals;
 
         /// <summary>Parsed tiers, in order T0..T7. Rebuilt whenever a setting changes.</summary>
         public static List<Tier> Tiers = new List<Tier>();
@@ -197,9 +198,11 @@ namespace BossGatedPortals
                 "Vanilla blocks tool-tier 1000+ items at every portal. The only such item is FrozenKingDrop. " +
                 "If true, the final tier also unlocks those.");
             RespectVanillaAllowAll = Admin(items, "RespectVanillaAllowAll", true,
-                "Never block items at a portal that already lets everything through in vanilla (the Stone Portal), " +
-                "and respect the 'Portals' world modifier when it allows all items. (The portal limit's " +
-                "PortalLimitLockWhenOver still locks every portal while the world has too many.)");
+                "Stone Portals: in vanilla the Stone Portal is the one portal that lets every item through, ores and " +
+                "metals included. true = keep it that way: the tiers never block items at a Stone Portal (or anywhere, " +
+                "while the 'Portals' world modifier allows all items). false = Stone Portals follow the tiers like wood " +
+                "portals. Only about items; the portal limit has its own Stone Portal setting " +
+                "(PortalLimitCountStonePortals).");
 
             const string messages = "3 - Messages";
             HintFormat = Admin(messages, "HintFormat", Hints.DefaultFormat,
@@ -315,6 +318,11 @@ namespace BossGatedPortals
             PortalLimitOverMessage = Admin(limit, "PortalLimitOverMessage",
                 "This world has too many portals ({count} of {limit}). Destroy one before any portal will work.",
                 limitOnly + "Shown at a portal while PortalLimitLockWhenOver locks it. {count}, {limit}. Never name a boss.");
+            PortalLimitCountStonePortals = Admin(limit, "PortalLimitCountStonePortals", true,
+                limitOnly + "true = Stone Portals follow the same limit as wood portals: they count, can't be built over " +
+                "the limit, and lock with the others. false = Stone Portals are left out of the limit entirely: they " +
+                "don't count, can always be built, and keep working while the world is over its limit. " +
+                "(Any portal that lets every item through counts as a Stone Portal here.)");
 
             for (int i = 0; i < TierDefaults.Length; i++)
             {
@@ -404,7 +412,7 @@ namespace BossGatedPortals
                 $"LockListedItemsAlways={LockListedItemsAlways.Value}, AdminBypass={AdminBypass.Value}, " +
                 $"BringMount={BringMount.Value}, BringCart={BringCart.Value}, BringTames={BringTames.Value}, " +
                 $"PortalLimit={PortalLimitEnabled.Value} (start {PortalLimitStart.Value}, admins exempt {PortalLimitAdminsExempt.Value}, " +
-                $"lock when over {PortalLimitLockWhenOver.Value})",
+                $"lock when over {PortalLimitLockWhenOver.Value}, count stone portals {PortalLimitCountStonePortals.Value})",
                 "NeverTeleport: " + Describe(NeverTeleportItems),
                 "Tiers:",
             };

@@ -211,14 +211,17 @@ namespace BossGatedPortals
     {
         // > 0 while the local player's own inventory is being checked (from our prefix to our finalizer).
         private static int ownCheckDepth;
+        // That check's allowAllItems: a bag check with another value (AdventureBackpacks refreshing its
+        // bag's mark) decides the bag's answer but adds nothing to the hint.
+        private static bool ownAllowAll;
 
         [HarmonyPriority(Priority.First)]
-        private static void Prefix(Inventory __instance, out bool __state)
+        private static void Prefix(Inventory __instance, bool allowAllItems, out bool __state)
         {
             __state = false;
             try
             {
-                __state = EnterOwnCheck(__instance);
+                __state = EnterOwnCheck(__instance, allowAllItems);
             }
             catch (Exception e)
             {
@@ -246,11 +249,11 @@ namespace BossGatedPortals
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static bool EnterOwnCheck(Inventory inventory)
+        private static bool EnterOwnCheck(Inventory inventory, bool allowAllItems)
         {
             Player player = Player.m_localPlayer;
             if (player == null || player.GetInventory() != inventory) return false;
-            ownCheckDepth++;
+            if (ownCheckDepth++ == 0) ownAllowAll = allowAllItems;
             return true;
         }
 
@@ -267,14 +270,32 @@ namespace BossGatedPortals
             if (!own && ownCheckDepth > 0)
             {
                 // A bag (or other carried inventory, e.g. an AdventureBackpacks bag) checked by another mod during
-                // the player's check: our rules decide, and its blocked items join the player's for the hint.
-                int before = Hints.LastBlocked.Count;
-                AddBlocked(player, inventory, allowAllItems, " in your backpack");
-                result = Hints.LastBlocked.Count == before;
+                // the player's check: our rules decide, and its blocked items join the player's for the hint
+                // (unless already there: Bags lets us check known bags' contents ourselves).
+                scratch.Clear();
+                AddBlocked(player, inventory, allowAllItems, " in your backpack", scratch);
+                if (allowAllItems == ownAllowAll)
+                {
+                    foreach (Hints.Blocked b in scratch)
+                    {
+                        if (!Listed(b.Item)) Hints.LastBlocked.Add(b);
+                    }
+                }
+                result = scratch.Count == 0;
                 return;
             }
             if (!own && inventory != cart)
-                return; // someone else's inventory: vanilla's answer stands
+            {
+                // A bag mod marking a bag the player carries (AdventureBackpacks, when its contents change):
+                // our rules, so the mark matches the gate. Anyone else's inventory: vanilla's answer stands.
+                if (Bags.IsBagIn(player.GetInventory(), inventory))
+                {
+                    result = true;
+                    foreach (ItemDrop.ItemData item in inventory.GetAllItems())
+                        result &= Gate.CanTeleport(player, item, allowAllItems);
+                }
+                return;
+            }
 
             Hints.LastBlocked.Clear();
             Hints.PortalLocked = null;
@@ -296,10 +317,22 @@ namespace BossGatedPortals
             result = Hints.LastBlocked.Count == 0;
         }
 
-        private static void AddBlocked(Player player, Inventory inventory, bool allowAllItems, string where)
+        private static readonly List<Hints.Blocked> scratch = new List<Hints.Blocked>();
+
+        private static bool Listed(ItemDrop.ItemData item)
+        {
+            foreach (Hints.Blocked b in Hints.LastBlocked)
+            {
+                if (b.Item == item) return true;
+            }
+            return false;
+        }
+
+        private static void AddBlocked(Player player, Inventory inventory, bool allowAllItems, string where,
+            List<Hints.Blocked> blocked = null)
         {
             foreach (ItemDrop.ItemData item in inventory.GetAllItems())
-                Gate.CollectBlockers(player, item, allowAllItems, Hints.LastBlocked, where);
+                Gate.CollectBlockers(player, item, allowAllItems, blocked ?? Hints.LastBlocked, where);
         }
 
         /// <summary>

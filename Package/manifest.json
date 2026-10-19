@@ -1,6 +1,6 @@
 {
   "name": "BossGatedPortals",
-  "version_number": "1.3.0",
+  "version_number": "1.3.1",
   "website_url": "https://github.com/skatefast29/BossGatedPortals",
   "description": "Portal progression: ores and metals teleport once their biome's boss is beaten, and new worlds get a portal limit that grows with each boss. Optional: mounts, carts and tames travel with you; faster portals. Works with XPortal and TargetPortal.",
   "dependencies": [

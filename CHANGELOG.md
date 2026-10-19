@@ -1,9 +1,9 @@
 # Changelog
 
-## 1.3.1
+## 1.3.2
 
-- Fixed: with AdventureBackpacks 2.4.5 or newer, a backpack holding ore stayed blocked at portals even
-  after the boss that unlocks that ore was defeated.
+- AdventureBackpacks 2.4.5 added code to support this mod, which clashed with it: a backpack holding ore
+  stayed blocked at portals even after that ore's boss was defeated. This mod is adjusted to work with it.
 
 ## 1.3.0
 
